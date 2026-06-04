@@ -3,9 +3,9 @@
   ],
   "passes": [
     {
-      "name": "shimmer:dot_screen",
-      "intarget": "shimmer:input",
-      "outtarget": "shimmer:output",
+      "name": "lumenized:dot_screen",
+      "intarget": "lumenized:input",
+      "outtarget": "lumenized:output",
       "auxtargets": [
         {"id":"minecraft:main", "name":"Background"}
       ]

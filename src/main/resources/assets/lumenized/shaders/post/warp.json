@@ -3,11 +3,11 @@
   ],
   "passes": [
     {
-      "name": "shimmer:warp",
+      "name": "lumenized:warp",
       "intarget": "minecraft:main",
-      "outtarget": "shimmer:output",
+      "outtarget": "lumenized:output",
       "auxtargets": [
-        {"id":"shimmer:input", "name":"WarpImage"}
+        {"id":"lumenized:input", "name":"WarpImage"}
       ]
     }
   ]

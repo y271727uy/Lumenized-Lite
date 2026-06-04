@@ -132,6 +132,9 @@ legacyForge {
             systemProperty 'mixin.debug.export', 'true'
             systemProperty 'mixin.debug.verbose', 'true'
             systemProperty 'mixin.checks.interfaces', 'true'
+
+            // Force register lumenized mixin config in dev mode
+            systemProperty 'mixin.configs', "${mod_id}.mixins.json"
         }
     }
 
@@ -185,11 +188,15 @@ dependencies {
 
     // JetBrains annotations
     implementation "org.jetbrains:annotations:24.0.1"
+
+    //Starlight
+    modImplementation "maven.modrinth:starlight-forge:cNa0vkNj"
 }
 
 // Mixin refmap
 mixin {
     add sourceSets.main, "${mod_id}.refmap.json"
+    config "${mod_id}.mixins.json"
 }
 
 jar {

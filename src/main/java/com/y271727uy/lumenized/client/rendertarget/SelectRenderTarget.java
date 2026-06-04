@@ -1,7 +1,7 @@
 package com.y271727uy.lumenized.client.rendertarget;
 
 import com.y271727uy.lumenized.comp.iris.IrisHandle;
-import com.y271727uy.lumenized.mixin.MixinPluginShared;
+import com.y271727uy.lumenized.core.MixinPluginShared;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.Minecraft;
 

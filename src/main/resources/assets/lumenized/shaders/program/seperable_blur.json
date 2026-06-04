@@ -4,8 +4,8 @@
         "srcrgb": "one",
         "dstrgb": "zero"
     },
-    "vertex": "shimmer:blit",
-    "fragment": "shimmer:seperable_blur",
+    "vertex": "lumenized:blit",
+    "fragment": "lumenized:seperable_blur",
     "attributes": [ "Position" ],
     "samplers": [
         { "name": "DiffuseSampler" }

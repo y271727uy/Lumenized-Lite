@@ -1,5 +1,6 @@
 package com.y271727uy.lumenized.mixin;
 
+import com.y271727uy.lumenized.core.MixinPluginShared;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -32,6 +33,14 @@ public class LumenizedForgeMixinPlugin implements IMixinConfigPlugin , MixinPlug
         }
         if (mixinClassName.contains("com.y271727uy.lumenized.mixin.oculus")) {
             return IS_OCULUS_LOAD;
+        }
+        // When Oculus is loaded, disable our reload shader system to avoid conflicts with MixinProgram
+        if (IS_OCULUS_LOAD && mixinClassName.contains("reloadShader")) {
+            return false;
+        }
+        // When Oculus is loaded, it replaces the vanilla shader pipeline and conflicts with our ProgramMixin
+        if (IS_OCULUS_LOAD && mixinClassName.contains("ProgramMixin")) {
+            return false;
         }
         return true;
     }

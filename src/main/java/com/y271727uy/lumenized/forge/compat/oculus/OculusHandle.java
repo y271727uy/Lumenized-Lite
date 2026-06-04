@@ -4,7 +4,7 @@ import com.y271727uy.lumenized.LumenizedConstants;
 import com.y271727uy.lumenized.client.shader.RenderUtils;
 import com.y271727uy.lumenized.client.shader.ShaderSSBO;
 import com.y271727uy.lumenized.comp.iris.IrisHandle;
-import com.y271727uy.lumenized.mixin.MixinPluginShared;
+import com.y271727uy.lumenized.core.MixinPluginShared;
 import com.y271727uy.lumenized.mixin.rubidium.ShaderStorageBufferAccessor;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.irisshaders.iris.gl.buffer.ShaderStorageBuffer;

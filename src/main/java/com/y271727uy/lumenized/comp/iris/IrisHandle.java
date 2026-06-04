@@ -2,7 +2,7 @@ package com.y271727uy.lumenized.comp.iris;
 
 import com.y271727uy.lumenized.LumenizedConstants;
 import com.y271727uy.lumenized.client.shader.ShaderSSBO;
-import com.y271727uy.lumenized.mixin.MixinPluginShared;
+import com.y271727uy.lumenized.core.MixinPluginShared;
 import com.y271727uy.lumenized.platform.Services;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;

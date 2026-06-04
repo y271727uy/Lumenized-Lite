@@ -1,4 +1,4 @@
-package com.y271727uy.lumenized.mixin;
+package com.y271727uy.lumenized.core;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -7,11 +7,6 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @author HypherionSA
- * @date 2022/06/07
- * Added to stop Rubidium & Sodium mixin from trying to load if the mod is not installed. Prevents log spam of Mixin Errors
- */
 public class LumenizedMixinPlugin implements IMixinConfigPlugin , MixinPluginShared {
 
     @Override

@@ -1,4 +1,4 @@
-package com.y271727uy.lumenized.mixin;
+package com.y271727uy.lumenized.core;
 
 import com.y271727uy.lumenized.LumenizedConstants;
 
@@ -21,22 +21,17 @@ public interface MixinPluginShared {
 	private static boolean checkOptifine() {
 		try {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			//knot class loader's name is null
 			if (Objects.equals(classLoader.getName(),"TRANSFORMER")) {
-				//under forge's TransformingClassLoader
 				try {
-					//try not to load the class
 					var fmlLoaderClass = Class.forName("net.minecraftforge.fml.loading.FMLLoader");
 					var getGameLayerMethod = fmlLoaderClass.getMethod("getGameLayer");
 					var gameLayer = getGameLayerMethod.invoke(null);
 					var configurationMethod = gameLayer.getClass().getMethod("configuration");
-					//fully-qualified class name, Configuration is a common name
 					var configuration = (java.lang.module.Configuration)configurationMethod.invoke(gameLayer);
 					return configuration.toString().contains("optifine");
 				} catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 					LumenizedConstants.LOGGER.catching(e);
 				}
-				//fall back, this will cause class loading and may prevent subsequent transforming operations
 				return isClassFound("optifine.Installer");
 			}
 		} catch (Exception e){

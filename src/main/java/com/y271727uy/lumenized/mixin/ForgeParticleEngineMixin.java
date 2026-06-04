@@ -8,6 +8,7 @@ import com.y271727uy.lumenized.client.postprocessing.IPostParticleType;
 import com.y271727uy.lumenized.client.postprocessing.PostProcessing;
 import com.y271727uy.lumenized.core.IParticleDescription;
 import com.y271727uy.lumenized.core.IParticleEngine;
+import com.y271727uy.lumenized.core.LumenizedMixinPlugin;
 import com.y271727uy.lumenized.platform.Services;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.BufferBuilder;

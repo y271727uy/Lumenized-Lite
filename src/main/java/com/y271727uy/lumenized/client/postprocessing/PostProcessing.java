@@ -13,7 +13,7 @@ import com.y271727uy.lumenized.client.shader.RenderUtils;
 import com.y271727uy.lumenized.client.shader.ShaderInjection;
 import com.y271727uy.lumenized.core.IMainTarget;
 import com.y271727uy.lumenized.core.IParticleEngine;
-import com.y271727uy.lumenized.mixin.LumenizedMixinPlugin;
+import com.y271727uy.lumenized.core.LumenizedMixinPlugin;
 import com.y271727uy.lumenized.event.LumenizedReloadEvent;
 import com.y271727uy.lumenized.platform.Services;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -174,20 +174,50 @@ public class PostProcessing implements ResourceManagerReloadListener {
     }
 
     public static String embeddiumBloomMRTFSHInjection(String s) {
-        s = new StringBuffer(s).insert(s.lastIndexOf("in vec4 v_Color;"), """
-                        in float isBloom;
-                        """).toString();
-        s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), """
-                        out vec4 bloomColor;
-                        """).toString();
-        s = new StringBuffer(s).insert(s.lastIndexOf('}'), """
-                    if (isBloom > 255.) {
-                        bloomColor = fragColor * smoothstep(u_FogEnd,u_FogStart,v_FragDistance);
-                    } else {
-                        bloomColor = vec4(0.);
-                    }
-                """).toString();
-        return s;
+        // Verify injection points exist
+        if (s.lastIndexOf("in vec4 v_Color;") < 0 || s.lastIndexOf("void main()") < 0) {
+            String err = "Embeddium FSH format incompatible: expected 'in vec4 v_Color;', 'void main()' not found";
+            LumenizedConstants.LOGGER.error(err);
+            throw new RuntimeException(err);
+        }
+
+        try {
+            s = new StringBuffer(s).insert(s.lastIndexOf("in vec4 v_Color;"), """
+                            in float isBloom;
+                            """).toString();
+            s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), """
+                            out vec4 bloomColor;
+                            """).toString();
+
+            // Check if fog support is enabled (v_FragDistance only exists when USE_FOG is defined)
+            boolean hasFog = s.contains("#define USE_FOG");
+
+            String bloomCalc;
+            if (hasFog) {
+                bloomCalc = """
+                        if (isBloom > 255.) {
+                            bloomColor = fragColor * smoothstep(u_FogEnd,u_FogStart,v_FragDistance);
+                        } else {
+                            bloomColor = vec4(0.);
+                        }
+                    """;
+            } else {
+                // Without fog, v_FragDistance is not available, use full fragColor for bloom
+                bloomCalc = """
+                        if (isBloom > 255.) {
+                            bloomColor = fragColor;
+                        } else {
+                            bloomColor = vec4(0.);
+                        }
+                    """;
+            }
+
+            s = new StringBuffer(s).insert(s.lastIndexOf('}'), bloomCalc).toString();
+            return s;
+        } catch (Exception e) {
+            LumenizedConstants.LOGGER.error("Failed to inject bloom into Embeddium FSH: {}", e.getMessage());
+            throw e;
+        }
     }
 
     public CopyDepthColorTarget getPostTarget(boolean hookColorAttachment) {

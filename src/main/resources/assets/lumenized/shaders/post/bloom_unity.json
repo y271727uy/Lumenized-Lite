@@ -59,27 +59,27 @@
   ],
   "passes": [
     {
-      "name": "shimmer:down_sampling",
-      "intarget": "shimmer:input",
+      "name": "lumenized:down_sampling",
+      "intarget": "lumenized:input",
       "outtarget": "swap2a"
     },
     {
-      "name": "shimmer:down_sampling",
+      "name": "lumenized:down_sampling",
       "intarget": "swap2a",
       "outtarget": "swap4a"
     },
     {
-      "name": "shimmer:down_sampling",
+      "name": "lumenized:down_sampling",
       "intarget": "swap4a",
       "outtarget": "swap8a"
     },
     {
-      "name": "shimmer:down_sampling",
+      "name": "lumenized:down_sampling",
       "intarget": "swap8a",
       "outtarget": "swap16a"
     },
     {
-      "name": "shimmer:blit",
+      "name": "lumenized:blit",
       "intarget": "swap16a",
       "outtarget": "swap8b",
       "auxtargets": [
@@ -87,7 +87,7 @@
       ]
     },
     {
-      "name": "shimmer:up_sampling",
+      "name": "lumenized:up_sampling",
       "intarget": "swap8b",
       "outtarget": "swap4b",
       "auxtargets": [
@@ -95,7 +95,7 @@
       ]
     },
     {
-      "name": "shimmer:up_sampling",
+      "name": "lumenized:up_sampling",
       "intarget": "swap4b",
       "outtarget": "swap2b",
       "auxtargets": [
@@ -103,11 +103,11 @@
       ]
     },
     {
-      "name": "shimmer:unity_composite",
+      "name": "lumenized:unity_composite",
       "intarget": "swap2b",
-      "outtarget": "shimmer:output",
+      "outtarget": "lumenized:output",
       "auxtargets": [
-        {"id":"shimmer:input", "name":"DownTexture"},
+        {"id":"lumenized:input", "name":"DownTexture"},
         {"id":"minecraft:main", "name":"Background"}
       ]
     }

@@ -2,7 +2,7 @@ package com.y271727uy.lumenized.client.shader;
 
 import com.y271727uy.lumenized.LumenizedConstants;
 import com.y271727uy.lumenized.comp.iris.IrisHandle;
-import com.y271727uy.lumenized.mixin.MixinPluginShared;
+import com.y271727uy.lumenized.core.MixinPluginShared;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;

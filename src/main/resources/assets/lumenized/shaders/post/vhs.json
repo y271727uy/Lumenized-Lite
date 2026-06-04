@@ -3,9 +3,9 @@
   ],
   "passes": [
     {
-      "name": "shimmer:vhs",
-      "intarget": "shimmer:input",
-      "outtarget": "shimmer:output",
+      "name": "lumenized:vhs",
+      "intarget": "lumenized:input",
+      "outtarget": "lumenized:output",
       "auxtargets": [
         {"id":"minecraft:main", "name":"Background"}
       ]

@@ -1,7 +1,7 @@
 {
   "targets": [
     {
-      "name": "shimmer:filter_temp",
+      "name": "lumenized:filter_temp",
       "blit": true,
       "scaleSize": {
         "width": 1,
@@ -75,16 +75,16 @@
   ],
   "passes": [
     {
-      "name": "shimmer:filter_bloom_color",
-      "intarget": "shimmer:input",
-      "outtarget": "shimmer:filter_temp",
+      "name": "lumenized:filter_bloom_color",
+      "intarget": "lumenized:input",
+      "outtarget": "lumenized:filter_temp",
       "auxtargets": [
         {"id": "minecraft:main", "name": "MainSampler"}
       ]
     },
     {
-      "name": "shimmer:seperable_blur",
-      "intarget": "shimmer:filter_temp",
+      "name": "lumenized:seperable_blur",
+      "intarget": "lumenized:filter_temp",
       "outtarget": "swap2a",
       "uniforms": [
         {
@@ -98,7 +98,7 @@
       ]
     },
     {
-      "name": "shimmer:seperable_blur",
+      "name": "lumenized:seperable_blur",
       "intarget": "swap2a",
       "outtarget": "swap2b",
       "uniforms": [
@@ -113,7 +113,7 @@
       ]
     },
     {
-      "name": "shimmer:seperable_blur",
+      "name": "lumenized:seperable_blur",
       "intarget": "swap2b",
       "outtarget": "swap4a",
       "uniforms": [
@@ -128,7 +128,7 @@
       ]
     },
     {
-      "name": "shimmer:seperable_blur",
+      "name": "lumenized:seperable_blur",
       "intarget": "swap4a",
       "outtarget": "swap4b",
       "uniforms": [
@@ -143,7 +143,7 @@
       ]
     },
     {
-      "name": "shimmer:seperable_blur",
+      "name": "lumenized:seperable_blur",
       "intarget": "swap4b",
       "outtarget": "swap8a",
       "uniforms": [
@@ -158,7 +158,7 @@
       ]
     },
     {
-      "name": "shimmer:seperable_blur",
+      "name": "lumenized:seperable_blur",
       "intarget": "swap8a",
       "outtarget": "swap8b",
       "uniforms": [
@@ -173,7 +173,7 @@
       ]
     },
     {
-      "name": "shimmer:seperable_blur",
+      "name": "lumenized:seperable_blur",
       "intarget": "swap8b",
       "outtarget": "swap16a",
       "uniforms": [
@@ -188,7 +188,7 @@
       ]
     },
     {
-      "name": "shimmer:seperable_blur",
+      "name": "lumenized:seperable_blur",
       "intarget": "swap16a",
       "outtarget": "swap16b",
       "uniforms": [
@@ -203,11 +203,11 @@
       ]
     },
     {
-      "name": "shimmer:unreal_composite",
-      "intarget": "shimmer:composite_source",
-      "outtarget": "shimmer:output",
+      "name": "lumenized:unreal_composite",
+      "intarget": "lumenized:composite_source",
+      "outtarget": "lumenized:output",
       "auxtargets": [
-        {"id":"shimmer:filter_temp", "name":"HighLight"},
+        {"id":"lumenized:filter_temp", "name":"HighLight"},
         {"id":"swap2b", "name":"BlurTexture1"},
         {"id":"swap4b", "name":"BlurTexture2"},
         {"id":"swap8b", "name":"BlurTexture3"},

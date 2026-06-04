@@ -9,7 +9,7 @@ import com.y271727uy.lumenized.client.shader.RenderUtils;
 import com.y271727uy.lumenized.client.shader.ShaderInjection;
 import com.y271727uy.lumenized.client.shader.ShaderUBO;
 import com.y271727uy.lumenized.comp.iris.IrisHandle;
-import com.y271727uy.lumenized.mixin.MixinPluginShared;
+import com.y271727uy.lumenized.core.MixinPluginShared;
 import com.y271727uy.lumenized.event.LumenizedReloadEvent;
 import com.y271727uy.lumenized.platform.Services;
 import it.unimi.dsi.fastutil.Pair;
@@ -128,19 +128,32 @@ public enum LightManager {
     }
 
     public static String embeddiumVVSHInjection(String s) {
-        s = new StringBuffer(s).insert(s.lastIndexOf("out vec2 v_TexCoord;"), """
-                 out float isBloom;
-                 """).toString();
-        s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), getLightShader()).toString();
-        s = new StringBuffer(s).insert(s.lastIndexOf('}'), Services.PLATFORM.useLightMap() ? """
-                    v_Color = color_light_uv(position, v_Color, ivec2(_vert_tex_light_coord) * 16 ).rgba;
-                """ : """
-                    v_Color = color_light(position, v_Color * 16).rgba;
-                """).toString();
-        s = new StringBuffer(s).insert(s.lastIndexOf("}"), """
-                isBloom = ((_material_params >> 4u) & 0x01u) > 0u ? 256.0 : 0.0;
-                """).toString();
-        return s;
+        // Verify injection points exist in Embeddium 0.3.31+ shader format
+        if (s.lastIndexOf("out vec2 v_TexCoord;") < 0 || s.lastIndexOf("void main()") < 0) {
+            String err = "Embeddium VSH format incompatible: expected 'out vec2 v_TexCoord;', 'void main()' not found";
+            LumenizedConstants.LOGGER.error(err);
+            throw new RuntimeException(err);
+        }
+
+        try {
+            // Insert isBloom output before texCoord declaration (recalculate indices after each edit)
+            s = new StringBuffer(s).insert(s.lastIndexOf("out vec2 v_TexCoord;"), """
+                     out float isBloom;
+                     """).toString();
+            s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), getLightShader()).toString();
+            s = new StringBuffer(s).insert(s.lastIndexOf('}'), Services.PLATFORM.useLightMap() ? """
+                        v_Color = color_light_uv(position, v_Color, ivec2(_vert_tex_light_coord) * 16 ).rgba;
+                    """ : """
+                        v_Color = color_light(position, v_Color * 16).rgba;
+                    """).toString();
+            s = new StringBuffer(s).insert(s.lastIndexOf('}'), """
+                    isBloom = ((_material_params >> 4u) & 0x01u) > 0u ? 256.0 : 0.0;
+                    """).toString();
+            return s;
+        } catch (Exception e) {
+            LumenizedConstants.LOGGER.error("Failed to inject colored light into Embeddium VSH: {}", e.getMessage());
+            throw e;
+        }
     }
 
     public void bindRbProgram(int programID) {
@@ -200,6 +213,13 @@ public enum LightManager {
     }
 
     public void renderLevelPre(int blockLightSize, float camX, float camY, float camZ) {
+        // Ensure UBOs are initialized before first use (reloadShaders may not have been called yet when Oculus is loaded)
+        if (lightUBO == null || envUBO == null) {
+            reloadShaders();
+            if (lightUBO == null || envUBO == null) {
+                return; // Still null, skip this frame
+            }
+        }
         RenderUtils.warpGLDebugLabel("renderLevelPre",()->{
             updateNoUVLight();
             if (Services.PLATFORM.isColoredLightEnable()){
@@ -302,6 +322,7 @@ public enum LightManager {
     }
 
     public void renderLevelPost() {
+        if (envUBO == null) return;
         envUBO.bufferSubData(0, new int[8]);
     }
 
