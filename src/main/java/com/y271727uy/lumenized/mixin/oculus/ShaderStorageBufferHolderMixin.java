@@ -1,0 +1,29 @@
+package com.y271727uy.lumenized.mixin.oculus;
+
+import com.y271727uy.lumenized.comp.iris.IrisHandle;
+import net.irisshaders.iris.gl.buffer.ShaderStorageBuffer;
+import net.irisshaders.iris.gl.buffer.ShaderStorageBufferHolder;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(value = ShaderStorageBufferHolder.class, remap = false)
+public abstract class ShaderStorageBufferHolderMixin {
+    @Shadow(remap = false) private boolean destroyed;
+
+    @Shadow(remap = false) private ShaderStorageBuffer[] buffers;
+
+    @Inject(method = "setupBuffers", at = @At("TAIL"))
+    private void updateIrisHandle(CallbackInfo ci) {
+        if (!this.destroyed){
+            IrisHandle.INSTANCE.updateInfo(buffers);
+        }
+    }
+
+    @Inject(method = "destroyBuffers", at = @At("TAIL"))
+    private void destroy(CallbackInfo ci) {
+        IrisHandle.INSTANCE.onSSBODestroyed();
+    }
+}

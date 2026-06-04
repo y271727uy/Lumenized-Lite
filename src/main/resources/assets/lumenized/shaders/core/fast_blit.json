@@ -1,0 +1,8 @@
+{
+    "vertex": "lumenized:fast_blit",
+    "fragment": "lumenized:fast_blit",
+    "attributes": [ "Position" ],
+    "samplers": [
+        { "name": "DiffuseSampler" }
+    ]
+}

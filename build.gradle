@@ -19,6 +19,48 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    mavenCentral()
+    maven { url = "https://jitpack.io" }
+    maven {
+        url = uri("https://maven.parchmentmc.org/")
+        content {
+            includeGroup("org.parchmentmc.data")
+        }
+    }
+    maven {
+        url = uri("https://cursemaven.com")
+        content {
+            includeGroup("curse.maven")
+        }
+    }
+    maven {
+        name = "Modrinth"
+        url = uri("https://api.modrinth.com/maven")
+        content {
+            includeGroup("maven.modrinth")
+        }
+    }
+    maven {
+        name = "IzzelAliz Maven"
+        url = uri("https://maven.izzel.io/releases/")
+        content {
+            includeGroup("icyllis.modernui")
+        }
+    }
+    maven {
+        name = "tterrag maven"
+        url = uri("https://maven.tterrag.com/")
+        content {
+            includeGroup("com.jozufozu.flywheel")
+        }
+    }
+    maven {
+        name = "CreateMod Maven"
+        url = uri("https://maven.createmod.net")
+        content {
+            includeGroup("dev.engine-room.flywheel")
+        }
+    }
 }
 
 base {
@@ -37,8 +79,6 @@ legacyForge {
         minecraftVersion = project.parchment_minecraft_version
     }
 
-    // This line is optional. Access Transformers are automatically detected
-    // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
@@ -87,6 +127,11 @@ legacyForge {
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             logLevel = org.slf4j.event.Level.DEBUG
+
+            // Mixin debug properties
+            systemProperty 'mixin.debug.export', 'true'
+            systemProperty 'mixin.debug.verbose', 'true'
+            systemProperty 'mixin.checks.interfaces', 'true'
         }
     }
 
@@ -116,49 +161,44 @@ obfuscation {
 }
 
 dependencies {
-    // If you wish to declare dependencies against mods, make sure to use the 'mod*' configurations so that they're remapped.
-	// See https://github.com/neoforged/ModDevGradle/blob/main/LEGACY.md#remapping-mod-dependencies for more information.
-	
-    // Example optional mod dependency with JEI
-    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
-    // modCompileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
-    // modCompileOnly "mezz.jei:jei-${mc_version}-neoforge-api:${jei_version}"
-    // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
-    // modLocalRuntime "mezz.jei:jei-${mc_version}-neoforge:${jei_version}"
+    // Mixin & annotation processors
+    annotationProcessor "org.spongepowered:mixin:0.8.7:processor"
+    // MixinExtras - 使用 compileOnly(annotationProcessor()) 统一语法
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
+    implementation "io.github.llamalad7:mixinextras-forge:${mixin_extras_version}"
 
-    // Example mod dependency using a mod jar from ./libs with a flat dir repository
-    // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
-    // The group id is ignored when searching -- in this case, it is "blank"
-    // modImplementation "blank:coolmod-${mc_version}:${coolmod_version}"
+    // Flywheel render engine (from CreateMod Maven)
+    modImplementation "dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${forge_flywheel_version}"
 
-    // Example mod dependency using a file as dependency
-    // modImplementation files("libs/coolmod-${mc_version}-${coolmod_version}.jar")
+    // ModernUI (for HsbColorWidget, auxiliary screen)
+    implementation "icyllis.modernui:ModernUI-Core:${modernui_core_version}"
+    modCompileOnly "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_version}"
 
-    // Example project dependency using a sister or child project:
-    // modImplementation project(":myproject")
+    // Embeddium (Sodium fork for Forge) - runtime compatibility
+    modImplementation "maven.modrinth:embeddium:${embeddium_version}"
 
-    // For more info:
-    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
-    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+    // Oculus (Iris for Forge) - runtime compatibility
+    modImplementation "maven.modrinth:oculus:${oculus_version}"
+
+    // JNA - RenderDoc support
+    implementation "net.java.dev.jna:jna:${jna_version}"
+
+    // JetBrains annotations
+    implementation "org.jetbrains:annotations:24.0.1"
 }
 
-// Uncomment the lines below if you wish to configure mixin. The mixin file should be named modid.mixins.json.
-/*
+// Mixin refmap
 mixin {
     add sourceSets.main, "${mod_id}.refmap.json"
-    config "${mod_id}.mixins.json"
-}
-
-dependencies {
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
 jar {
     manifest.attributes([
             "MixinConfigs": "${mod_id}.mixins.json"
     ])
+    // 排除 Fabric API 桩接口，不打包进 JAR
+    exclude 'net/fabricmc/**'
 }
-*/
 
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
@@ -203,6 +243,10 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs.addAll([
+        '-AdisableTargetValidator=true',
+        '-Amixin.disableObfuscation=true'
+    ])
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

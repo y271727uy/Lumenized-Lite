@@ -1,0 +1,19 @@
+package com.y271727uy.lumenized.forge;
+
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLLoader;
+
+/**
+ * @author KilaBash
+ * @date 2022/05/02
+ * @implNote com.y271727uy.lumenized.CommonProxy
+ */
+@SuppressWarnings("removal")
+public class CommonProxy {
+    public CommonProxy() {
+        IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        eventBus.register(this);
+    }
+
+}
