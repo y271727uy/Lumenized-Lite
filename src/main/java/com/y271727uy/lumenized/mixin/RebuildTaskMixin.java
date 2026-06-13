@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(targets = "net.minecraft.client.renderer.chunk.ChunkRenderDispatcher$RenderChunk$RebuildTask")
 public abstract class RebuildTaskMixin {
-    @SuppressWarnings("target") @Shadow(remap = false, aliases = {"this$1", "f_112859_", "field_20839"}) @Final ChunkRenderDispatcher.RenderChunk this$1;
+    @SuppressWarnings("target") @Shadow(aliases = {"this$1", "f_112859_", "field_20839"}) @Final ChunkRenderDispatcher.RenderChunk this$1;
     ImmutableList.Builder<ColorPointLight> lights;
 
     @Redirect(method = "compile",

@@ -31,14 +31,14 @@ import java.util.Map;
 @Mixin(PostChain.class)
 public abstract class PostChainMixin {
 
-    @Shadow(remap = false) @Final private RenderTarget screenTarget;
+    @Shadow @Final private RenderTarget screenTarget;
 
-    @Shadow(remap = false) @Final private Map<String, RenderTarget> customRenderTargets;
-    @Shadow(remap = false) private int screenWidth;
-    @Shadow(remap = false) private int screenHeight;
-    @Shadow(remap = false) @Final private List<RenderTarget> fullSizedTargets;
+    @Shadow @Final private Map<String, RenderTarget> customRenderTargets;
+    @Shadow private int screenWidth;
+    @Shadow private int screenHeight;
+    @Shadow @Final private List<RenderTarget> fullSizedTargets;
 
-    @Shadow(remap = false) public abstract void addTempTarget(String pName, int pWidth, int pHeight);
+    @Shadow public abstract void addTempTarget(String pName, int pWidth, int pHeight);
 
     @Unique
     public void shimmer$addTempTarget(String pName, float sw, float sh) {

@@ -4,6 +4,7 @@
 	"plugin": "com.y271727uy.lumenized.mixin.LumenizedForgeMixinPlugin",
 	"package": "com.y271727uy.lumenized.mixin",
 	"compatibilityLevel": "JAVA_17",
+	"refmap": "lumenized.refmap.json",
 	"client": [
 		"BlockLightEngineMixin",
 		"GameRendererMixin",

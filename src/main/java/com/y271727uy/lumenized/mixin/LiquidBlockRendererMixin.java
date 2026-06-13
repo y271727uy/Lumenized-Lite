@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(LiquidBlockRenderer.class)
 public abstract class LiquidBlockRendererMixin {
 
-    @Shadow(remap = false) protected abstract int getLightColor(BlockAndTintGetter $$0, BlockPos $$1);
+    @Shadow protected abstract int getLightColor(BlockAndTintGetter $$0, BlockPos $$1);
 
     @Redirect(method = "tesselate", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/block/LiquidBlockRenderer;getLightColor(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/core/BlockPos;)I"))

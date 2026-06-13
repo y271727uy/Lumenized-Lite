@@ -28,7 +28,7 @@ import java.util.Objects;
 @Mixin(HumanoidArmorLayer.class)//FIXME
 public abstract class HumanoidArmorLayerMixin {
 
-    @Shadow(remap = false) protected abstract ResourceLocation getArmorLocation(ArmorItem armorItem, boolean bl, String string);
+    @Shadow protected abstract ResourceLocation getArmorLocation(ArmorItem armorItem, boolean bl, String string);
 
     @Inject(method = "renderModel", at = @At(value = "RETURN"))
     private void injectRenderModel(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, ArmorItem armorItem,HumanoidModel humanoidModel, boolean hasFoil, float r, float g, float b,@Nullable String resourceLocation, CallbackInfo ci) {

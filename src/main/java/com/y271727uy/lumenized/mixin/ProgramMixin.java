@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 @Mixin(Program.class)
 public abstract class ProgramMixin {
 
-    @Shadow(remap = false)
+    @Shadow
     @Final
     private Program.Type type;
     private static final Pattern REGEX_VERSION = Pattern.compile("(#(?:/\\*(?:[^*]|\\*+[^*/])*\\*+/|\\h)*version(?:/\\*(?:[^*]|\\*+[^*/])*\\*+/|\\h)*(\\d+))\\b");

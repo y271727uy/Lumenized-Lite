@@ -50,14 +50,14 @@ import java.util.concurrent.Executor;
  */
 @Mixin(ParticleEngine.class)
 public abstract class ForgeParticleEngineMixin implements IParticleEngine {
-    @Shadow(remap = false)
+    @Shadow
     @Nullable
     protected abstract <T extends ParticleOptions> Particle makeParticle(T pParticleData, double pX, double pY, double pZ, double pXSpeed, double pYSpeed, double pZSpeed);
 
-    @Shadow(remap = false)
+    @Shadow
     public abstract void add(Particle pEffect);
 
-    @Shadow(remap = false)
+    @Shadow
     @Final
     private Map<ParticleRenderType, Queue<Particle>> particles;
 

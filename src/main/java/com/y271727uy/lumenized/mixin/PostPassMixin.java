@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(PostPass.class)
 public abstract class PostPassMixin {
-    @Shadow(remap = false) @Final private EffectInstance effect;
+    @Shadow @Final private EffectInstance effect;
 
     /**
      * @author KilaBash

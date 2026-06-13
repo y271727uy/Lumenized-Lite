@@ -10,7 +10,7 @@ import java.util.Set;
 @Mixin(targets = "net.minecraft.client.renderer.ShaderInstance$1")
 public class ShaderInstanceGlslProcessorMixin implements IGlslProcessor {
     @Final
-    @Shadow(remap = false)
+    @Shadow
     private Set<String> importedPaths;
 
     public void shimmer$clearImportedPathRecord() {

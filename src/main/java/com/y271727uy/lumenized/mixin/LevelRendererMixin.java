@@ -40,9 +40,9 @@ import java.nio.FloatBuffer;
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin {
 
-    @Shadow(remap = false) @Nullable private ClientLevel level;
+    @Shadow @Nullable private ClientLevel level;
 
-    @Shadow(remap = false) @Final private ObjectArrayList<?> renderChunksInFrustum;
+    @Shadow @Final private ObjectArrayList<?> renderChunksInFrustum;
 
     @Inject(method = "renderLevel",
             at = @At(

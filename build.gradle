@@ -199,6 +199,9 @@ mixin {
     config "${mod_id}.mixins.json"
 }
 
+// 将生成的 refmap 添加到资源输出
+sourceSets.main.output.dir("build/generated/sources/mixin/main", builtBy: tasks.compileJava)
+
 jar {
     manifest.attributes([
             "MixinConfigs": "${mod_id}.mixins.json"
@@ -251,8 +254,7 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
     options.compilerArgs.addAll([
-        '-AdisableTargetValidator=true',
-        '-Amixin.disableObfuscation=true'
+        '-AdisableTargetValidator=true'
     ])
 }
 
