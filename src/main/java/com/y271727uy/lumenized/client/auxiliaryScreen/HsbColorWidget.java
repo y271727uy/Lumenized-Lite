@@ -488,9 +488,6 @@ public class HsbColorWidget extends AbstractWidget {
 		listeners.add(listener);
 	}
 
-	/**
-	 * for fabric only
-	 */
 	public static Pair<ShaderInstance, Consumer<ShaderInstance>> registerShaders(ResourceManager resourceManager) {
 		try {
 			return Pair.of(new ShaderInstance(resourceManager, new ResourceLocation(LumenizedConstants.MOD_ID, "hsb_block").toString(), HSB_VERTEX_FORMAT),

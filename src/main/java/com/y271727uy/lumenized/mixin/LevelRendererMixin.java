@@ -5,7 +5,6 @@ import com.y271727uy.lumenized.client.light.LightManager;
 import com.y271727uy.lumenized.client.postprocessing.PostProcessing;
 import com.y271727uy.lumenized.client.shader.ReloadShaderManager;
 import com.y271727uy.lumenized.core.IRenderChunk;
-import com.y271727uy.lumenized.util.ReflectHelper;
 import com.y271727uy.lumenized.platform.Services;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -96,11 +95,11 @@ public abstract class LevelRendererMixin {
         int left = LightManager.INSTANCE.leftBlockLightCount();
         FloatBuffer buffer = LightManager.INSTANCE.getBuffer();
         buffer.clear();
-        for (Object chunkInfoObj : renderChunksInFrustum) {
+        for (Object chunkInfo : renderChunksInFrustum) {
             if (left <= blockLightSize) {
                 break;
             }
-            Object chunk = ReflectHelper.getField(chunkInfoObj, "chunk");
+            Object chunk = ((RenderChunkInfoAccessor) chunkInfo).lumenized$getChunk();
             if (chunk instanceof IRenderChunk) {
                 for (ColorPointLight shimmerLight : ((IRenderChunk) chunk).getShimmerLights()) {
                     if (left <= blockLightSize) {

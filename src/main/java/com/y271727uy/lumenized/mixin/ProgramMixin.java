@@ -40,7 +40,7 @@ public abstract class ProgramMixin {
 
         if (Services.PLATFORM.isEnableInsetShaderInfo()){
             Matcher matcher = REGEX_VERSION.matcher(shader);
-            int index = matcher.find() ? matcher.group().length() : 0;
+            int index = matcher.find() ? matcher.end() : 0;
             if (pShaderSourceName.equals("Mod Resources") || pShaderSourceName.equals("Default")){
                 shader = new StringBuilder(shader).insert(index,"\n#line __LINE__ //shaderName:" + shaderName).toString();
             }else {

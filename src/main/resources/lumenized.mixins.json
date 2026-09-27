@@ -20,6 +20,7 @@
 		"PostPassMixin",
 		"ProgramMixin",
 		"RebuildTaskMixin",
+		"RenderChunkInfoAccessor",
 		"RenderChunkMixin",
 		"RenderSystemMixin",
 		"RenderTargetMixin",
