@@ -44,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 import java.util.function.Consumer;
 
 /**
@@ -56,13 +57,13 @@ public class PostProcessing implements ResourceManagerReloadListener {
     public static final Set<RenderType> CHUNK_TYPES = Sets.newHashSet(RenderType.solid(), RenderType.cutoutMipped(), RenderType.cutout());
 
     private static final Map<String, PostProcessing> POST_PROCESSING_MAP = new HashMap<>();
-    public static final PostProcessing BLOOM_UNREAL = new PostProcessing("bloom_unreal", new ResourceLocation(LumenizedConstants.MOD_ID, "shaders/post/bloom_unreal.json"));
-    public static final PostProcessing BLOOM_UNITY = new PostProcessing("bloom_unity", new ResourceLocation(LumenizedConstants.MOD_ID, "shaders/post/bloom_unity.json"));
-    public static final PostProcessing WARP = new PostProcessing("warp", new ResourceLocation(LumenizedConstants.MOD_ID, "shaders/post/warp.json"));
-    public static final PostProcessing VHS = new PostProcessing("vhs", new ResourceLocation(LumenizedConstants.MOD_ID, "shaders/post/vhs.json"));
-    public static final PostProcessing FLICKER = new PostProcessing("flicker", new ResourceLocation(LumenizedConstants.MOD_ID, "shaders/post/flicker.json"));
-    public static final PostProcessing HALFTONE = new PostProcessing("halftone", new ResourceLocation(LumenizedConstants.MOD_ID, "shaders/post/halftone.json"));
-    public static final PostProcessing DOT_SCREEN = new PostProcessing("dot_screen", new ResourceLocation(LumenizedConstants.MOD_ID, "shaders/post/dot_screen.json"));
+    public static final PostProcessing BLOOM_UNREAL = new PostProcessing("bloom_unreal", ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "shaders/post/bloom_unreal.json"));
+    public static final PostProcessing BLOOM_UNITY = new PostProcessing("bloom_unity", ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "shaders/post/bloom_unity.json"));
+    public static final PostProcessing WARP = new PostProcessing("warp", ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "shaders/post/warp.json"));
+    public static final PostProcessing VHS = new PostProcessing("vhs", ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "shaders/post/vhs.json"));
+    public static final PostProcessing FLICKER = new PostProcessing("flicker", ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "shaders/post/flicker.json"));
+    public static final PostProcessing HALFTONE = new PostProcessing("halftone", ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "shaders/post/halftone.json"));
+    public static final PostProcessing DOT_SCREEN = new PostProcessing("dot_screen", ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "shaders/post/dot_screen.json"));
 
     public static AtomicBoolean enableBloomFilter = new AtomicBoolean(false);
     private static final Minecraft mc = Minecraft.getInstance();
@@ -124,9 +125,21 @@ public class PostProcessing implements ResourceManagerReloadListener {
         ShaderInjection.registerFSHInjection("rendertype_cutout_mipped", PostProcessing::BloomMRTFSHInjection);
     }
 
+    private static boolean hasVersionDirective(String source) {
+        String uncommented = source
+                .replaceAll("(?s)/\\*.*?\\*/", "")
+                .replaceAll("(?m)//.*$", "");
+        return Pattern.compile("(?m)^\\s*#version\\s+\\d+\\b").matcher(uncommented).find();
+    }
+
     private static String BloomMRTVSHInjection(String s) {
+        if (s.contains("isBloom") || !hasVersionDirective(s)
+                || s.lastIndexOf("void main()") < 0 || s.lastIndexOf("UV2") < 0) {
+            LumenizedConstants.LOGGER.warn("Skipping Bloom VSH injection: unsupported shader layout");
+            return s;
+        }
         s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), """                        
-                        out float isBloom;
+                        flat out float isBloom;
                         """).toString();
         s = new StringBuffer(s).insert(s.lastIndexOf('}'), """
                         isBloom = float(UV2.x);
@@ -135,20 +148,33 @@ public class PostProcessing implements ResourceManagerReloadListener {
     }
 
     private static String BloomMRTFSHInjection(String s) {
-        s = s.replace("#version 150", "#version 330 core");
+        if (s.contains("bloomColor") || s.contains("in float isBloom")
+                || !hasVersionDirective(s)
+                || s.lastIndexOf("#moj_import <fog.glsl>") < 0
+                || s.lastIndexOf("out vec4 fragColor;") < 0
+                || s.matches("(?s).*layout\\s*\\([^)]*\\)\\s*out\\s+vec4\\s+fragColor.*")
+                || s.matches("(?s).*layout\\s*\\(\\s*location\\s*=\\s*1\\s*\\).*")
+                || s.lastIndexOf("void main()") < 0
+                || s.lastIndexOf("vec4 color") < 0
+                || s.lastIndexOf("linear_fog(") < 0
+                || s.split("FogColor", -1).length - 1 < 2) {
+            LumenizedConstants.LOGGER.warn("Skipping Bloom GLSL injection: unsupported shader layout");
+            return s;
+        }
+        s = s.replaceFirst("(?m)^\\s*#version\\s+150[^\\r\\n]*", "#version 330 core");
         s = new StringBuilder(s).insert(s.lastIndexOf("#moj_import <fog.glsl>"),"#moj_import <shimmer_fog.glsl>\n").toString();
-        s = new StringBuffer(s).insert(s.lastIndexOf("out vec4 fragColor"), """
-                        in float isBloom;
+        s = new StringBuffer(s).insert(s.lastIndexOf("out vec4 fragColor;"), """
+                        flat in float isBloom;
                         """).toString();
-        s = s.replace("out vec4 fragColor", "layout (location = 0) out vec4 fragColor");
+        s = s.replace("out vec4 fragColor;", "layout (location = 0) out vec4 fragColor;");
         s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), """
                         layout (location = 1) out vec4 bloomColor;
                         """).toString();
         s = new StringBuffer(s).insert(s.lastIndexOf('}'), """
-                    if (isBloom > 255.) {
-                        bloomColor = fragColor * (1 - fogValue);
+                    if (isBloom > 255.0) {
+                        bloomColor = fragColor * (1.0 - fogValue);
                     } else {
-                        bloomColor = vec4(0.);
+                        bloomColor = vec4(0.0);
                     }
                 """).toString();
         s = new StringBuilder(s).insert(s.lastIndexOf("vec4 color"),"float fogValue;\n").toString();
@@ -157,65 +183,63 @@ public class PostProcessing implements ResourceManagerReloadListener {
     }
 
     public static String RbBloomMRTFSHInjection(String s) {
+        if (s.contains("bloomColor") || s.contains("in float isBloom")
+                || !hasVersionDirective(s)
+                || s.contains("#version 150")
+                || s.matches("(?s).*layout\\s*\\(\\s*location\\s*=\\s*1\\s*\\).*")
+                || s.lastIndexOf("in vec3 v_ColorModulator;") < 0
+                || s.lastIndexOf("void main()") < 0
+                || s.lastIndexOf("out_FragColor;") < 0
+                || s.lastIndexOf("u_FogEnd;") < 0
+                || s.lastIndexOf("u_FogStart;") < 0
+                || s.lastIndexOf("v_FragDistance;") < 0) {
+            return s;
+        }
         s = new StringBuffer(s).insert(s.lastIndexOf("in vec3 v_ColorModulator;"), """
-                        in float isBloom;
+                        flat in float isBloom;
                         """).toString();
         s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), """
-                        out vec4 bloomColor;
+                        layout (location = 1) out vec4 bloomColor;
                         """).toString();
         s = new StringBuffer(s).insert(s.lastIndexOf('}'), """
-                    if (isBloom > 255.) {
-                        bloomColor = out_FragColor * smoothstep(u_FogEnd,u_FogStart,v_FragDistance);
+                    float fogRange = max(u_FogEnd - u_FogStart, 0.0001);
+                    if (isBloom > 255.0) {
+                        bloomColor = out_FragColor * (1.0 - smoothstep(u_FogStart, u_FogStart + fogRange, v_FragDistance));
                     } else {
-                        bloomColor = vec4(0.);
+                        bloomColor = vec4(0.0);
                     }
                 """).toString();
         return s;
     }
 
-    public static String embeddiumBloomMRTFSHInjection(String s) {
-        // Verify injection points exist
-        if (s.lastIndexOf("in vec4 v_Color;") < 0 || s.lastIndexOf("void main()") < 0) {
-            String err = "Embeddium FSH format incompatible: expected 'in vec4 v_Color;', 'void main()' not found";
-            LumenizedConstants.LOGGER.error(err);
-            throw new RuntimeException(err);
+    public static String sodiumBloomMRTFSHInjection(String s) {
+        if (s.contains("bloomColor") || s.contains("in float isBloom")
+                || !hasVersionDirective(s)
+                || s.contains("#version 150")
+                || s.matches("(?s).*layout\\s*\\(\\s*location\\s*=\\s*1\\s*\\).*")) {
+            return s;
+        }
+        if (s.lastIndexOf("in vec4 v_Color;") < 0
+                || s.lastIndexOf("out vec4 fragColor;") < 0
+                || s.lastIndexOf("void main()") < 0) {
+            LumenizedConstants.LOGGER.warn("Skipping Sodium Bloom GLSL injection: unsupported shader layout");
+            return s;
         }
 
         try {
             s = new StringBuffer(s).insert(s.lastIndexOf("in vec4 v_Color;"), """
-                            in float isBloom;
+                            flat in float isBloom;
                             """).toString();
             s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), """
-                            out vec4 bloomColor;
+                            layout (location = 1) out vec4 bloomColor;
                             """).toString();
 
-            // Check if fog support is enabled (v_FragDistance only exists when USE_FOG is defined)
-            boolean hasFog = s.contains("#define USE_FOG");
-
-            String bloomCalc;
-            if (hasFog) {
-                bloomCalc = """
-                        if (isBloom > 255.) {
-                            bloomColor = fragColor * smoothstep(u_FogEnd,u_FogStart,v_FragDistance);
-                        } else {
-                            bloomColor = vec4(0.);
-                        }
-                    """;
-            } else {
-                // Without fog, v_FragDistance is not available, use full fragColor for bloom
-                bloomCalc = """
-                        if (isBloom > 255.) {
-                            bloomColor = fragColor;
-                        } else {
-                            bloomColor = vec4(0.);
-                        }
-                    """;
-            }
-
-            s = new StringBuffer(s).insert(s.lastIndexOf('}'), bloomCalc).toString();
+            s = new StringBuffer(s).insert(s.lastIndexOf('}'), """
+                        bloomColor = isBloom > 255.0 ? fragColor : vec4(0.0);
+                    """).toString();
             return s;
         } catch (Exception e) {
-            LumenizedConstants.LOGGER.error("Failed to inject bloom into Embeddium FSH: {}", e.getMessage());
+            LumenizedConstants.LOGGER.error("Failed to inject bloom into Sodium FSH: {}", e.getMessage());
             throw e;
         }
     }
@@ -272,7 +296,7 @@ public class PostProcessing implements ResourceManagerReloadListener {
         BlendMode lastBlendMode = BlendModeState.getLastApplied();
         RenderSystem.depthMask(false);
         RenderSystem.disableDepthTest();
-        postChain.process(mc.getFrameTime());
+        postChain.process(mc.getTimer().getGameTimeDeltaPartialTick(false));
         RenderUtils.fastBlit(postChain.getTempTarget("lumenized:output"), output);
         BlendModeState.setLastApplied(lastBlendMode);
     }
@@ -516,11 +540,11 @@ public class PostProcessing implements ResourceManagerReloadListener {
 		for (var config : Configuration.configs){
 			for (var bloom : config.blooms){
 				if (bloom.particleName != null) {
-					if (!ResourceLocation.isValidResourceLocation(bloom.particleName)){
+					if (ResourceLocation.tryParse(bloom.particleName) == null){
 						LumenizedConstants.LOGGER.error("invalid particle name " + bloom.particleName + " form" + config.configSource);
 						continue;
 					}
-					var particleLocation = new ResourceLocation(bloom.particleName);
+					var particleLocation = ResourceLocation.parse(bloom.particleName);
 					BLOOM_PARTICLE.add(particleLocation);
 				}else if (bloom.fluidName != null){
 					Pair<ResourceLocation, Fluid> fluid = bloom.fluid();

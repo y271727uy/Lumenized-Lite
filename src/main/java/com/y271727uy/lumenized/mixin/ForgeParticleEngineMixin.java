@@ -13,6 +13,7 @@ import com.y271727uy.lumenized.platform.Services;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
@@ -28,7 +29,7 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -75,10 +76,10 @@ public abstract class ForgeParticleEngineMixin implements IParticleEngine {
         }
     }
 
-    @ModifyReceiver(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;)V",
+    @ModifyReceiver(method = "render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/particle/ParticleRenderType;begin(Lcom/mojang/blaze3d/vertex/BufferBuilder;Lnet/minecraft/client/renderer/texture/TextureManager;)V"))
-    private ParticleRenderType injectRenderPre(ParticleRenderType particlerendertype, BufferBuilder bufferBuilder, TextureManager textureManager) {
+                    target = "Lnet/minecraft/client/particle/ParticleRenderType;begin(Lcom/mojang/blaze3d/vertex/Tesselator;Lnet/minecraft/client/renderer/texture/TextureManager;)Lcom/mojang/blaze3d/vertex/BufferBuilder;"))
+    private ParticleRenderType injectRenderPre(ParticleRenderType particlerendertype, Tesselator tesselator, TextureManager textureManager) {
         Queue<Particle> particleQueue = (Queue<Particle>) this.particles.get(particlerendertype);
         if (particlerendertype instanceof IPostParticleType && particleQueue != null && particleQueue.size() > 0) {
             PostProcessing postProcessing = ((IPostParticleType) particlerendertype).getPost();
@@ -89,20 +90,18 @@ public abstract class ForgeParticleEngineMixin implements IParticleEngine {
     }
 
 
-    @Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;)V",
-            at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/particle/ParticleRenderType;end(Lcom/mojang/blaze3d/vertex/Tesselator;)V",
-                    shift = At.Shift.AFTER))
-    private void injectRenderPost(CallbackInfo ci) {
+    @Inject(method = "render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V",
+            at = @At("RETURN"))
+    private void injectRenderPost(LightTexture lightTexture, Camera camera, float partialTick, net.minecraft.client.renderer.culling.Frustum frustum, java.util.function.Predicate<ParticleRenderType> renderTypePredicate, CallbackInfo ci) {
         RenderTarget mainRenderTarget = Minecraft.getInstance().getMainRenderTarget();
         if (TracedGLState.bindFrameBuffer != mainRenderTarget.frameBufferId){
             mainRenderTarget.bindWrite(false);
         }
     }
 
-    @Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;)V",
+    @Inject(method = "render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V",
             at = @At(value = "RETURN"), remap = false)
-    private void injectRenderReturn(PoseStack pMatrixStack, MultiBufferSource.BufferSource pBuffer, LightTexture pLightTexture, Camera pActiveRenderInfo, float pPartialTicks, net.minecraft.client.renderer.culling.Frustum clippingHelper, CallbackInfo ci) {
+    private void injectRenderReturn(LightTexture pLightTexture, Camera pActiveRenderInfo, float pPartialTicks, net.minecraft.client.renderer.culling.Frustum clippingHelper, java.util.function.Predicate<ParticleRenderType> renderTypePredicate, CallbackInfo ci) {
         for (PostProcessing postProcessing : PostProcessing.values()) {
             postProcessing.renderParticlePost();
         }
@@ -124,7 +123,7 @@ public abstract class ForgeParticleEngineMixin implements IParticleEngine {
 
     @Inject(method = "createParticle", at = @At(value = "HEAD"), cancellable = true)
     private void injectCreateParticle(ParticleOptions particleOptions, double x, double y, double z, double sx, double sy, double sz, CallbackInfoReturnable<Particle> cir) {
-        ResourceLocation name = ForgeRegistries.PARTICLE_TYPES.getKey(particleOptions.getType());
+        ResourceLocation name = net.minecraft.core.registries.BuiltInRegistries.PARTICLE_TYPE.getKey(particleOptions.getType());
         if (!LumenizedMixinPlugin.IS_OPT_LOAD) {
             if (PARTICLE_EFFECT.containsKey(name)) {
                 PostProcessing postProcessing = PostProcessing.getPost(PARTICLE_EFFECT.get(name));

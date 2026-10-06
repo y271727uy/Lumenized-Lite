@@ -1,22 +1,23 @@
 package com.y271727uy.lumenized.forge;
 
 import com.y271727uy.lumenized.LumenizedConstants;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.config.ModConfig;
 
 public class LumenizedForgeConfig {
-    private static ForgeConfigSpec.IntValue UBO_OFFSET;
-    private static ForgeConfigSpec.BooleanValue BLOCK_BLOOM;
-    private static ForgeConfigSpec.BooleanValue LIGHT_MAP;
-    private static ForgeConfigSpec.BooleanValue COLORED_LIGHT_ENABLE;
-    private static ForgeConfigSpec.BooleanValue BLOOM_ENABLE;
-    private static ForgeConfigSpec.BooleanValue ADDITIVE_BLEND;
-    private static ForgeConfigSpec.IntValue BLOOM_COLOR_ATTACHMENT_NUMBER;
-    private static ForgeConfigSpec.BooleanValue INSERT_SHADER_INFO;
-    private static ForgeConfigSpec.BooleanValue ENABLE_BUILDIN_SETTING;
+    private static ModConfigSpec.IntValue UBO_OFFSET;
+    private static ModConfigSpec.BooleanValue BLOCK_BLOOM;
+    private static ModConfigSpec.BooleanValue LIGHT_MAP;
+    private static ModConfigSpec.BooleanValue COLORED_LIGHT_ENABLE;
+    private static ModConfigSpec.BooleanValue BLOOM_ENABLE;
+    private static ModConfigSpec.BooleanValue ADDITIVE_BLEND;
+    private static ModConfigSpec.IntValue BLOOM_COLOR_ATTACHMENT_NUMBER;
+    private static ModConfigSpec.BooleanValue INSERT_SHADER_INFO;
+    private static ModConfigSpec.BooleanValue ENABLE_BUILDIN_SETTING;
+    private static ModConfigSpec CLIENT_SPEC;
 
-    public static ForgeConfigSpec.IntValue getUboOffset() {
+    public static ModConfigSpec.IntValue getUboOffset() {
         if (UBO_OFFSET == null) {
             logAccessUnInit("UBO_OFFSET");
             registerConfig();
@@ -24,7 +25,7 @@ public class LumenizedForgeConfig {
         return UBO_OFFSET;
     }
 
-    public static ForgeConfigSpec.BooleanValue getBlockBloom() {
+    public static ModConfigSpec.BooleanValue getBlockBloom() {
         if (BLOCK_BLOOM == null) {
             logAccessUnInit("BLOCK_BLOOM");
             registerConfig();
@@ -32,7 +33,7 @@ public class LumenizedForgeConfig {
         return BLOCK_BLOOM;
     }
 
-    public static ForgeConfigSpec.BooleanValue getLightMap() {
+    public static ModConfigSpec.BooleanValue getLightMap() {
         if (LIGHT_MAP == null) {
             logAccessUnInit("LIGHT_MAP");
             registerConfig();
@@ -40,7 +41,7 @@ public class LumenizedForgeConfig {
         return LIGHT_MAP;
     }
 
-    public static ForgeConfigSpec.BooleanValue getColoredLightEnable(){
+    public static ModConfigSpec.BooleanValue getColoredLightEnable(){
         if (COLORED_LIGHT_ENABLE == null){
             logAccessUnInit("COLORED_LIGHT_ENABLE");
             registerConfig();
@@ -48,7 +49,7 @@ public class LumenizedForgeConfig {
         return COLORED_LIGHT_ENABLE;
     }
 
-    public static ForgeConfigSpec.BooleanValue getBloomEnable(){
+    public static ModConfigSpec.BooleanValue getBloomEnable(){
         if (BLOOM_ENABLE == null){
             logAccessUnInit("BLOOM_ENABLE");
             registerConfig();
@@ -56,7 +57,7 @@ public class LumenizedForgeConfig {
         return BLOOM_ENABLE;
     }
 
-    public static ForgeConfigSpec.BooleanValue getAdditiveBlend(){
+    public static ModConfigSpec.BooleanValue getAdditiveBlend(){
         if (ADDITIVE_BLEND == null){
             logAccessUnInit("ADDITIVE_BLEND");
             registerConfig();
@@ -65,7 +66,7 @@ public class LumenizedForgeConfig {
     }
 
     //TODO config hasn't load when we need it, need change
-    public static ForgeConfigSpec.IntValue getBloomColorAttachmentNumber() {
+    public static ModConfigSpec.IntValue getBloomColorAttachmentNumber() {
         if (BLOOM_COLOR_ATTACHMENT_NUMBER == null){
             logAccessUnInit("BLOOM_COLOR_ATTACHMENT_NUMBER");
             registerConfig();
@@ -74,7 +75,7 @@ public class LumenizedForgeConfig {
     }
 
     //TODO config hasn't load when we need it, need change
-    public static ForgeConfigSpec.BooleanValue getInsertShaderInfo(){
+    public static ModConfigSpec.BooleanValue getInsertShaderInfo(){
         if (INSERT_SHADER_INFO == null){
             logAccessUnInit("INSERT_SHADER_INFO");
             registerConfig();
@@ -82,7 +83,7 @@ public class LumenizedForgeConfig {
         return INSERT_SHADER_INFO;
     }
 
-    public static ForgeConfigSpec.BooleanValue getEnableBuildinSetting(){
+    public static ModConfigSpec.BooleanValue getEnableBuildinSetting(){
         if (ENABLE_BUILDIN_SETTING == null) {
             logAccessUnInit("ENABLE_BUILDIN_SETTING");
             registerConfig();
@@ -99,14 +100,17 @@ public class LumenizedForgeConfig {
         }
     }
 
-    @SuppressWarnings("removal")
-    public static void registerConfig(){
-        ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
+    public static synchronized void registerConfig(){
+        if (CLIENT_SPEC != null) {
+            return;
+        }
+        ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
         registerClientConfig(clientBuilder);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT,clientBuilder.build());
+        CLIENT_SPEC = clientBuilder.build();
+        ModLoadingContext.get().getActiveContainer().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
     }
 
-    private static void registerClientConfig(ForgeConfigSpec.Builder builder){
+    private static void registerClientConfig(ModConfigSpec.Builder builder){
         UBO_OFFSET = builder.comment(
                 "setting UBO offset",
                 "-1 for auto setting",

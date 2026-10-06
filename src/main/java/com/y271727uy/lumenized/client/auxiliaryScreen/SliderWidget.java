@@ -122,10 +122,10 @@ public class SliderWidget extends AbstractSliderButton {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
 		var moveFactor = 10 * (isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT) ? 0.5 : 1);
-		trySetActualValue(actualValue + delta * stepSize * moveFactor);
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		trySetActualValue(actualValue + deltaY * stepSize * moveFactor);
+		return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
 	}
 
 	private static boolean isKeyPressed(int key) {

@@ -1,4 +1,5 @@
-#version 150
+#ifndef LUMENIZED_LIGHT_GLSL
+#define LUMENIZED_LIGHT_GLSL
 
 // #define ADDITIVE
 
@@ -27,10 +28,13 @@ vec3 jodieReinhardTonemap(vec3 c){
 }
 
 vec3 collect_light(vec3 fragPos, vec4 vertex_color, int begin, int end) {
-    vec3 lightColor = vec3(0., 0., 0.);
-    for (int i= begin; i<end;i++){
+    vec3 lightColor = vec3(0.0, 0.0, 0.0);
+    int lightBegin = clamp(begin, 0, 2048);
+    int lightEnd = clamp(end, lightBegin, 2048);
+    for (int i = lightBegin; i < lightEnd; i++){
         Light l = lights[i];
-        float intensity = smoothstep(0., 1., 1. - distance(l.position, fragPos) / l.radius);
+        float radius = max(l.radius, 0.0001);
+        float intensity = smoothstep(0.0, 1.0, 1.0 - distance(l.position, fragPos) / radius);
 
         #ifdef ADDITIVE
         lightColor += l.color.rgb * l.color.a * intensity;
@@ -43,32 +47,34 @@ vec3 collect_light(vec3 fragPos, vec4 vertex_color, int begin, int end) {
 }
 
 vec4 color_light(vec3 pos, vec4 vertex_color) {
-    vec3 lightColor = vec3(0., 0., 0.);
+    vec3 lightColor = vec3(0.0, 0.0, 0.0);
     vec3 fragPos = pos + camPos;
     lightColor += collect_light(fragPos, vertex_color, 0, uvLightCout);
     lightColor += collect_light(fragPos, vertex_color, uvLightCout, uvLightCout + nouvLightCout);
 
     lightColor = jodieReinhardTonemap(lightColor);
 
-    vec3 lcolor_2 = clamp(lightColor.rgb, 0.0f, 1.0f);
+    vec3 lcolor_2 = clamp(lightColor.rgb, 0.0, 1.0);
 
     // blend
     return vec4(vertex_color.rgb + lcolor_2, vertex_color.a);
 }
 
 vec4 color_light_uv(vec3 pos, vec4 vertex_color, ivec2 uv) {
-    float blockLight = smoothstep(0.5 / 16.0, 20.5 / 16.0, uv.x / 256.0);
+    float blockLight = smoothstep(0.5 / 16.0, 20.5 / 16.0, float(uv.x) / 256.0);
     vec3 fragPos = pos + camPos;
 
     vec3 nouvLightColor = jodieReinhardTonemap(collect_light(fragPos, vertex_color, uvLightCout, uvLightCout + nouvLightCout));
 
-    if (blockLight > 0. && uv.x < 255.) {
+    if (blockLight > 0.0 && uv.x < 255) {
         vec3 uvlightColor = collect_light(fragPos, vertex_color, 0, uvLightCout);
 
         uvlightColor = jodieReinhardTonemap(uvlightColor);
 
         return vec4(vertex_color.rgb + clamp(uvlightColor.rgb * blockLight * 3.5 + nouvLightColor, 0.0, 1.0), vertex_color.a);
     } else {
-        return vertex_color + vec4(nouvLightColor,.0);
+        return vertex_color + vec4(nouvLightColor, 0.0);
     }
 }
+
+#endif // LUMENIZED_LIGHT_GLSL

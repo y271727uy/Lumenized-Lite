@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,8 +30,8 @@ abstract public class GameRendererMixin {
 
 	@SuppressWarnings({"UnresolvedMixinReference", "InvalidMemberReference", "InvalidInjectorMethodSignature", "MixinAnnotationTarget"})
 	@Redirect(method = "loadEffect",
-			at = @At(value = "NEW", target = "(Lnet/minecraft/client/renderer/texture/TextureManager;Lnet/minecraft/server/packs/resources/ResourceManager;Lcom/mojang/blaze3d/pipeline/RenderTarget;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/PostChain;"))
-	private PostChain redirectLoadEffect(TextureManager textureManager, ResourceManager resourceManager, RenderTarget renderTarget, ResourceLocation resourceLocation) throws IOException {
+			at = @At(value = "NEW", target = "(Lnet/minecraft/client/renderer/texture/TextureManager;Lnet/minecraft/server/packs/resources/ResourceProvider;Lcom/mojang/blaze3d/pipeline/RenderTarget;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/PostChain;"))
+	private PostChain redirectLoadEffect(TextureManager textureManager, ResourceProvider resourceManager, RenderTarget renderTarget, ResourceLocation resourceLocation) throws IOException {
 		return ReloadShaderManager.backupNewPostChain(textureManager, resourceManager, renderTarget, resourceLocation);
 	}
 

@@ -2,6 +2,7 @@ package com.y271727uy.lumenized.forge.platform;
 
 import com.y271727uy.lumenized.event.LumenizedLoadConfigEvent;
 import com.y271727uy.lumenized.event.LumenizedReloadEvent;
+import com.y271727uy.lumenized.LumenizedConstants;
 import com.y271727uy.lumenized.forge.LumenizedForgeConfig;
 import com.y271727uy.lumenized.client.postprocessing.PostParticle;
 import com.y271727uy.lumenized.client.postprocessing.PostProcessing;
@@ -11,16 +12,15 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.common.ForgeConfig;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.loading.FMLConfig;
-import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.forgespi.language.IModInfo;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModLoader;
+import net.neoforged.fml.loading.FMLConfig;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforgespi.language.IModInfo;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
@@ -36,7 +36,7 @@ public class ForgePlatformHelper implements IPlatformHelper {
 
 	@Override
 	public String getPlatformName() {
-		return "Forge";
+		return "NeoForge";
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class ForgePlatformHelper implements IPlatformHelper {
 
 	@Override
 	public boolean useCombinedDepthStencilAttachment() {
-		return ForgeConfig.CLIENT.useCombinedDepthStencilAttachment.get();
+		return false;
 	}
 
 	@Override
@@ -97,17 +97,13 @@ public class ForgePlatformHelper implements IPlatformHelper {
 	@Override
 	public PostParticle createPostParticle(Particle parent, PostProcessing postProcessing) {
 		return new PostParticle(parent, postProcessing) {
-			@Override
-			public boolean shouldCull() {
-				return parent.shouldCull();
-			}
 		};
 
 	}
 
 	@Override
 	public boolean isLoadingStateValid() {
-		return ModLoader.isLoadingStateValid();
+        return true;
 	}
 
 	@Override
@@ -127,20 +123,24 @@ public class ForgePlatformHelper implements IPlatformHelper {
 
 	@Override
 	public LumenizedLoadConfigEvent postLoadConfigurationEvent(LumenizedLoadConfigEvent event) {
-		ModLoader.get().postEvent(new com.y271727uy.lumenized.forge.event.LumenizedLoadConfigEvent(event));
 		return event;
 	}
 
 	@Override
 	public LumenizedReloadEvent postReloadEvent(LumenizedReloadEvent event){
-		ModLoader.get().postEvent(new com.y271727uy.lumenized.forge.event.LumenizedReloadEvent(event));
 		return event;
 	}
 
     @Override
     public int getBloomColorAttachmentNumber() {
-        //TODO config hasn't load when we need it, need change
-        return 1 + GL30.GL_COLOR_ATTACHMENT0;
+        // Attachment 1 is required for the bloom MRT.  Some drivers expose
+        // only one draw buffer; never submit an invalid enum in that case.
+        int maxDrawBuffers = GL11.glGetInteger(GL30.GL_MAX_DRAW_BUFFERS);
+        if (maxDrawBuffers < 2) {
+            LumenizedConstants.LOGGER.warn("Bloom MRT disabled: GL_MAX_DRAW_BUFFERS={}", maxDrawBuffers);
+            return GL30.GL_COLOR_ATTACHMENT0;
+        }
+        return GL30.GL_COLOR_ATTACHMENT1;
     }
 
     @Override

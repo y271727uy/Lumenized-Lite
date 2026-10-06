@@ -22,6 +22,7 @@ public enum ShaderpackInjection {
     }
 
     public String injectTerrainVsh(String vsh) {
+        if (vsh == null) return null;
         for (Tuple<Predicate<String>, Function<String, String>> injection : VSH_INJECTIONS) {
             if (injection.getA().test(vsh)) {
                 return injection.getB().apply(vsh);
@@ -31,6 +32,7 @@ public enum ShaderpackInjection {
     }
 
     public String injectTerrainFsh(String fsh) {
+        if (fsh == null) return null;
         for (Tuple<Predicate<String>, Function<String, String>> injection : FSH_INJECTIONS) {
             if (injection.getA().test(fsh)) {
                 return injection.getB().apply(fsh);

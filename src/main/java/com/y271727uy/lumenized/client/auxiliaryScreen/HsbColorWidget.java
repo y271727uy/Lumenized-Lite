@@ -1,30 +1,26 @@
 package com.y271727uy.lumenized.client.auxiliaryScreen;
 
-import com.google.common.collect.ImmutableMap;
-import com.y271727uy.lumenized.LumenizedConstants;
 import com.y271727uy.lumenized.Utils;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.y271727uy.lumenized.LumenizedConstants;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.gui.GuiGraphics;
-import org.joml.Matrix4f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.network.chat.Component;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.FastColor;
+import java.io.IOException;
+import java.util.function.Consumer;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-
-import static com.mojang.blaze3d.vertex.DefaultVertexFormat.ELEMENT_POSITION;
 
 /**
  * the color picker using HSB color space<p>
@@ -36,18 +32,11 @@ public class HsbColorWidget extends AbstractWidget {
 	 * shader used by this widget, interpolated by vsh->fsh, with HSB2RGB by fsh
 	 */
 	public static ShaderInstance hsbShader;
+	public static final VertexFormat HSB_VERTEX_FORMAT = DefaultVertexFormat.POSITION_COLOR;
 
 	/**
 	 * the vertex format for HSB color, three four of float
 	 */
-	private static final VertexFormatElement HSB_Alpha = new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.COLOR, 4);
-
-	public static final VertexFormat HSB_VERTEX_FORMAT = new VertexFormat(
-			ImmutableMap.<String, VertexFormatElement>builder()
-					.put("Position", ELEMENT_POSITION)
-					.put("HSB_ALPHA", HSB_Alpha)
-					.build());
-
 	/**
 	 * all supported pick mode
 	 */
@@ -114,205 +103,15 @@ public class HsbColorWidget extends AbstractWidget {
 
 	@Override
 	public void renderWidget(GuiGraphics guiGraphics, int i, int j, float f) {
-
-		BufferBuilder builder = Tesselator.getInstance().getBuilder();
-		drawHsbContext(guiGraphics, builder);
-
-		renderInfo(guiGraphics, builder);
-	}
-
-	/**
-	 * have context for render hsb content
-	 */
-	private void drawHsbContext(GuiGraphics guiGraphics, BufferBuilder builder) {
-		RenderSystem.setShader(() -> hsbShader);
-		builder.begin(VertexFormat.Mode.QUADS, HSB_VERTEX_FORMAT);
-
-		var pose = guiGraphics.pose().last().pose();
-		renderMain(pose, builder);
-		renderSlide(pose, builder);
-		renderColor(pose, builder);
-
-		BufferUploader.drawWithShader(builder.end());
-	}
-
-	/**
-	 * render the main color, must be called in {@link #drawHsbContext(GuiGraphics, BufferBuilder)}
-	 */
-	private void renderMain(Matrix4f pose, BufferBuilder builder) {
-		float _h = 0, _s = 0, _b = 0f;
-
-		{
-			//left-up corner
-			switch (mode) {
-				case H -> {
-					_h = h;
-					_s = 0f;
-					_b = 1f;
-				}
-				case S -> {
-					_h = 0f;
-					_s = s;
-					_b = 1f;
-				}
-				case B -> {
-					_h = 0f;
-					_s = 1f;
-					_b = b;
-				}
-			}
-			builder.vertex(pose, getX(), getY(), 0.0f);
-			putColor(builder, _h, _s, _b, alpha).nextElement();
-			builder.endVertex();
-		}
-
-		{
-			//left-down corner
-			switch (mode) {
-				case H -> {
-					_h = h;
-					_s = 0f;
-					_b = 0f;
-				}
-				case S -> {
-					_h = 0f;
-					_s = s;
-					_b = 0f;
-				}
-				case B -> {
-					_h = 0f;
-					_s = 0;
-					_b = b;
-				}
-			}
-			builder.vertex(pose, getX(), getY() + height, 0.0f);
-			putColor(builder, _h, _s, _b, alpha).nextElement();
-			builder.endVertex();
-		}
-
-		{
-			//right-down corner
-			switch (mode) {
-				case H -> {
-					_h = h;
-					_s = 1f;
-					_b = 0f;
-				}
-				case S -> {
-					_h = 360f;
-					_s = s;
-					_b = 0f;
-				}
-				case B -> {
-					_h = 360f;
-					_s = 0f;
-					_b = b;
-				}
-			}
-			builder.vertex(pose, getX() + width, getY() + height, 0.0f);
-			putColor(builder, _h, _s, _b, alpha).nextElement();
-			builder.endVertex();
-		}
-
-		{
-			//right-up corner
-			switch (mode) {
-				case H -> {
-					_h = h;
-					_s = 1f;
-					_b = 1f;
-				}
-				case S -> {
-					_h = 360f;
-					_s = s;
-					_b = 1f;
-				}
-				case B -> {
-					_h = 360f;
-					_s = 1f;
-					_b = b;
-				}
-			}
-
-			builder.vertex(pose, getX() + width, getY(), 0.0f);
-			putColor(builder, _h, _s, _b, alpha).nextElement();
-			builder.endVertex();
-		}
-	}
-
-	/**
-	 * render the slide, must be called in {@link #drawHsbContext(GuiGraphics, BufferBuilder)}
-	 */
-	private void renderSlide(Matrix4f pose, BufferBuilder builder) {
-		float _h = 0f, _s = 0f, _b = 0f;
-		var barX = getX() + width + gap;
-
-		{
-			//down two corners
-			switch (mode) {
-				case H -> {
-					_h = 0f;
-					_s = 1f;
-					_b = 1f;
-				}
-				case S -> {
-					_h = h;
-					_s = 0f;
-					_b = b;
-				}
-				case B -> {
-					_h = h;
-					_s = s;
-					_b = 0f;
-				}
-			}
-			builder.vertex(pose, barX, getY() + height, 0.0f);
-			putColor(builder, _h, _s, _b, alpha).nextElement();
-			builder.endVertex();
-
-			builder.vertex(pose, barX + barWidth, getY() + height, 0.0f);
-			putColor(builder, _h, _s, _b, alpha).nextElement();
-			builder.endVertex();
-		}
-
-		{
-			//up two corners
-			switch (mode) {
-				case H -> {
-					_h = 360f;
-					_s = 1f;
-					_b = 1f;
-				}
-				case S -> {
-					_h = h;
-					_s = 1f;
-					_b = b;
-				}
-				case B -> {
-					_h = h;
-					_s = s;
-					_b = 1f;
-				}
-			}
-			builder.vertex(pose, barX + barWidth, getY(), 0.0f);
-			putColor(builder, _h, _s, _b, alpha).nextElement();
-			builder.endVertex();
-
-			builder.vertex(pose, barX, getY(), 0.0f);
-			putColor(builder, _h, _s, _b, alpha).nextElement();
-			builder.endVertex();
-		}
-
-
-	}
-
-	/**
-	 * render hsb/rgb/mode info
-	 */
-	private void renderInfo(GuiGraphics guiGraphics, BufferBuilder builder) {
+		int base = 0xff000000 | (rgb & 0xffffff);
+		guiGraphics.fill(getX(), getY(), getX() + width, getY() + height, base);
+		int barX = getX() + width + gap;
+		guiGraphics.fill(barX, getY(), barX + barWidth, getY() + height, 0xff808080);
+		int colorX = barX + barWidth + 40;
+		guiGraphics.fill(colorX, getY(), colorX + 20, getY() + 20, base);
 		Font font = Minecraft.getInstance().font;
-		var strX = getX() + width + gap + barWidth + 10;
-		var strGapY = (int) Math.max(0, (height - 6f * font.lineHeight) / 5f) + font.lineHeight;
+		int strX = colorX + 30;
+		int strGapY = font.lineHeight + 2;
 		guiGraphics.drawString(font, "h:" + (int) h + "°", strX, getY(), 0xffffffff);
 		guiGraphics.drawString(font, "s:" + (int) (s * 100) + "%", strX, getY() + strGapY, 0xffffffff);
 		guiGraphics.drawString(font, "b:" + (int) (b * 100) + "%", strX, getY() + strGapY * 2, 0xffffffff);
@@ -323,39 +122,8 @@ public class HsbColorWidget extends AbstractWidget {
 	}
 
 	/**
-	 * render the indicator color, must be called in {@link #drawHsbContext(GuiGraphics, BufferBuilder)}
+	 * render hsb/rgb/mode info
 	 */
-	private void renderColor(Matrix4f pose, BufferBuilder builder) {
-		var colorX = getX() + width + gap + barWidth + 10 + 30;
-		var colorSideLength = 20;
-		builder.vertex(pose, colorX, getY(), 0.0f);
-		putColor(builder, h, s, b, alpha).nextElement();
-		builder.endVertex();
-
-		builder.vertex(pose, colorX, getY() + colorSideLength, 0.0f);
-		putColor(builder, h, s, b, alpha).nextElement();
-		builder.endVertex();
-
-		builder.vertex(pose, colorX + colorSideLength, getY() + colorSideLength, 0.0f);
-		putColor(builder, h, s, b, alpha).nextElement();
-		builder.endVertex();
-
-		builder.vertex(pose, colorX + colorSideLength, getY(), 0.0f);
-		putColor(builder, h, s, b, alpha).nextElement();
-		builder.endVertex();
-
-	}
-
-	/**
-	 * put hsb color into BufferBuilder
-	 */
-	private BufferBuilder putColor(BufferBuilder builder, float h, float s, float b, float alpha) {
-		builder.putFloat(0, h);
-		builder.putFloat(4, s);
-		builder.putFloat(8, b);
-		builder.putFloat(12, alpha);
-		return builder;
-	}
 
 	/**
 	 * take the slide into account
@@ -493,7 +261,7 @@ public class HsbColorWidget extends AbstractWidget {
 	 */
 	public static Pair<ShaderInstance, Consumer<ShaderInstance>> registerShaders(ResourceManager resourceManager) {
 		try {
-			return Pair.of(new ShaderInstance(resourceManager, new ResourceLocation(LumenizedConstants.MOD_ID, "hsb_block").toString(), HSB_VERTEX_FORMAT),
+			return Pair.of(new ShaderInstance(resourceManager, ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "hsb_block").toString(), HSB_VERTEX_FORMAT),
 					shaderInstance -> hsbShader = shaderInstance);
 		} catch (IOException e) {
 			throw new RuntimeException(e);

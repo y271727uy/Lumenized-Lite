@@ -66,13 +66,11 @@ public class SuggestionEditBoxWidget extends EditBox {
 	/**
 	 * update is complete and call callbacks
 	 */
-	@Override
 	public void tick() {
-		super.tick();
 		var last = isComplete;
 		//check complete change
-		if (ResourceLocation.isValidResourceLocation(this.getValue())) {
-			ResourceLocation resourceLocation = new ResourceLocation(this.getValue());
+		if (ResourceLocation.tryParse(this.getValue()) != null) {
+			ResourceLocation resourceLocation = ResourceLocation.parse(this.getValue());
 			isComplete = allSuggestion.contains(resourceLocation);
 			if (!last && isComplete) {
 				completeListeners.forEach(item -> item.accept(type, resourceLocation));
@@ -83,8 +81,8 @@ public class SuggestionEditBoxWidget extends EditBox {
 		//check candidate change
 		if (!Objects.equals(candidate, lastCandidate)) {
 			lastCandidate = candidate;
-			if (lastCandidate != null && ResourceLocation.isValidResourceLocation(lastCandidate)) {
-				ResourceLocation resourceLocation = new ResourceLocation(lastCandidate);
+			if (lastCandidate != null && ResourceLocation.tryParse(lastCandidate) != null) {
+				ResourceLocation resourceLocation = ResourceLocation.parse(lastCandidate);
 				if (allSuggestion.contains(resourceLocation)) {
 					candidateListeners.forEach(item -> item.accept(type, resourceLocation));
 				}
@@ -94,7 +92,7 @@ public class SuggestionEditBoxWidget extends EditBox {
 	}
 
 	@Override
-	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+	public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
 		//render current by super
 		super.render(guiGraphics, mouseX, mouseY, partialTick);
 

@@ -102,14 +102,14 @@ public class CopyDepthColorTarget extends RenderTarget {
 
     public void enableSelfColorAttachment() {
         if (this.redirectedColorAttachment > -1) {
-            GL30.glDrawBuffers(redirectedColorAttachment);
+            GL30.glDrawBuffers(new int[]{redirectedColorAttachment});
         }else {
-            GL30.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT0);
+            GL30.glDrawBuffers(new int[]{GL30.GL_COLOR_ATTACHMENT0});
         }
     }
 
     public void disableAttachment() {
-        GL43.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT0);
+        GL43.glDrawBuffers(new int[]{GL30.GL_COLOR_ATTACHMENT0});
     }
 
     @Override

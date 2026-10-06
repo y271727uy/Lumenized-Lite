@@ -17,12 +17,7 @@ public interface IPostParticleType extends ParticleRenderType {
     PostProcessing getPost();
 
     @Override
-    default void begin(@NotNull BufferBuilder pBuilder, @NotNull TextureManager pTextureManager) {
-        getParent().begin(pBuilder, pTextureManager);
-    }
-
-    @Override
-    default void end(@NotNull Tesselator pTesselator) {
-        getParent().end(pTesselator);
+    default BufferBuilder begin(@NotNull Tesselator pTesselator, @NotNull TextureManager pTextureManager) {
+        return getParent().begin(pTesselator, pTextureManager);
     }
 }

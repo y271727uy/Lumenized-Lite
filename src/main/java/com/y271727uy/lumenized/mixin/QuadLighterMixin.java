@@ -6,7 +6,7 @@ import com.y271727uy.lumenized.core.IBakedQuad;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraftforge.client.model.lighting.QuadLighter;
+import net.neoforged.neoforge.client.model.lighting.QuadLighter;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,8 +24,8 @@ public class QuadLighterMixin {
 
     @ModifyReceiver(method = "process",
             at = @At(value = "INVOKE",
-                    target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData(Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;[FFFF[IIZ)V"))
-    private VertexConsumer injectPutQuadData(VertexConsumer vertexConsumer, PoseStack.Pose poseEntry, BakedQuad quad, float[] colorMuls, float red, float green, float blue, int[] combinedLights, int combinedOverlay, boolean mulColor) {
+                    target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData(Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lnet/minecraft/client/renderer/block/model/BakedQuad;[FFFFF[IIZ)V"))
+    private VertexConsumer injectPutQuadData(VertexConsumer vertexConsumer, PoseStack.Pose poseEntry, BakedQuad quad, float[] colorMuls, float red, float green, float blue, float alpha, int[] combinedLights, int combinedOverlay, boolean mulColor) {
         if ((quad instanceof IBakedQuad bloomQuad && bloomQuad.isBloom()) || PostProcessing.isBlockBloom()) {
             for (int i = 0; i < lightmap.length; i++) {
                 lightmap[i] = lightmap[i] | 0x10000100;

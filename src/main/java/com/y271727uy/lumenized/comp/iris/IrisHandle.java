@@ -39,7 +39,7 @@ public interface IrisHandle {
         var platformName = Services.PLATFORM.getPlatformName();
         var classLocation = switch (platformName) {
             case "Fabric" -> "com.y271727uy.lumenized.fabric.compact.iris.FabricIrisHandle";
-            case "Forge" -> "com.y271727uy.lumenized.forge.compat.oculus.OculusHandle";
+            case "NeoForge" -> "com.y271727uy.lumenized.forge.compat.iris.IrisHandleNeoForge";
             default -> throw new RuntimeException("unknown loader " + platformName);
         };
         IrisHandle handle = null;

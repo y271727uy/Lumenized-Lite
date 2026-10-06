@@ -2,7 +2,7 @@ plugins {
     id 'idea'
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev.legacyforge' version '2.0.91'
+    id 'net.neoforged.moddev' version '2.0.107'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -41,13 +41,6 @@ repositories {
         }
     }
     maven {
-        name = "IzzelAliz Maven"
-        url = uri("https://maven.izzel.io/releases/")
-        content {
-            includeGroup("icyllis.modernui")
-        }
-    }
-    maven {
         name = "tterrag maven"
         url = uri("https://maven.tterrag.com/")
         content {
@@ -67,12 +60,11 @@ base {
     archivesName = mod_id
 }
 
-// Mojang ships Java 17 to end users in 1.20.1, so mods should target Java 17.
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+// Minecraft 1.21.1 requires Java 21.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-legacyForge {
-    // Specify the version of MinecraftForge to use.
-    version = project.minecraft_version + '-' + project.forge_version
+neoForge {
+    version = project.neoforge_version
 
     parchment {
         mappingsVersion = project.parchment_mappings_version
@@ -87,13 +79,13 @@ legacyForge {
             client()
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
             programArgument '--nogui'
-            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
@@ -101,7 +93,7 @@ legacyForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
-            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         data {
@@ -121,7 +113,7 @@ legacyForge {
             // "SCAN": For mods scan.
             // "REGISTRIES": For firing of registry events.
             // "REGISTRYDUMP": For getting the contents of all registries.
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'neoforge.logging.markers', 'REGISTRIES'
 
             // Recommended logging level for the console
             // You can set various levels here.
@@ -158,30 +150,56 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 // "optional", meaning it will not be pulled by dependents of this mod.
 configurations {
     runtimeClasspath.extendsFrom localRuntime
-}
-obfuscation {
-    createRemappingConfiguration(configurations.localRuntime)
+    sodiumOuter
 }
 
+def sodiumJar = layout.buildDirectory.file("extracted-mods/sodium.jar")
+tasks.register("extractSodiumMod") {
+    inputs.files(configurations.sodiumOuter)
+    outputs.file(sodiumJar)
+    doLast {
+        def outer = configurations.sodiumOuter.singleFile
+        def target = sodiumJar.get().asFile
+        target.parentFile.mkdirs()
+        def zip = new java.util.zip.ZipFile(outer)
+        try {
+                def hasSodiumClasses = zip.entries().any { it.name.startsWith("net/caffeinemc/mods/sodium/client/") && it.name.endsWith(".class") }
+                def entry = zip.entries().find { it.name.startsWith("META-INF/jarjar/") && it.name.endsWith(".jar") && it.name.contains("sodium") && !it.name.endsWith("service.jar") }
+                if (hasSodiumClasses || entry == null) {
+                    // Some 0.6.x NeoForge builds are already the mod JAR.
+                    target.bytes = outer.bytes
+                } else {
+                    target.bytes = zip.getInputStream(entry).bytes
+                }
+        } finally {
+            zip.close()
+        }
+    }
+}
 dependencies {
     // Mixin & annotation processors
-    annotationProcessor "org.spongepowered:mixin:0.8.7:processor"
     // MixinExtras - 使用 compileOnly(annotationProcessor()) 统一语法
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
-    implementation "io.github.llamalad7:mixinextras-forge:${mixin_extras_version}"
+    implementation "io.github.llamalad7:mixinextras-neoforge:${mixin_extras_version}"
 
     // Flywheel render engine (from CreateMod Maven)
-    modImplementation "dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${forge_flywheel_version}"
+    implementation "dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${neoforge_flywheel_version}"
 
-    // ModernUI (for HsbColorWidget, auxiliary screen)
-    implementation "icyllis.modernui:ModernUI-Core:${modernui_core_version}"
-    modCompileOnly "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_version}"
+    // Sodium for NeoForge 1.21.1 (the Modrinth artifact is a wrapper with an inner mod JAR)
+    sodiumOuter files("D:/document/dev/gradle/.gradle/caches/modules-2/files-2.1/maven.modrinth/sodium/mc1.21.1-0.6.13-neoforge/38af70fa4dc4b2aaac636e92fdba3bedd5a025e1/sodium-mc1.21.1-0.6.13-neoforge.jar")
+    compileOnly files(sodiumJar)
+    runtimeOnly files(sodiumJar)
 
-    // Embeddium (Sodium fork for Forge) - runtime compatibility
-    modImplementation "maven.modrinth:embeddium:${embeddium_version}"
+    // Sodium's LevelSlice implements these Fabric API interfaces.  They are
+    // supplied at runtime by Forgified Fabric API/Iris; keep them compile-only
+    // here so Lumenized does not export duplicate classes into the JPMS layer.
+    compileOnly files(
+            "D:/document/dev/gradle/.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-block-view-api-v2/1.0.3+924f046a77/b283a700f2110f4f2a6a5d70a81293cd77681c0a/fabric-block-view-api-v2-1.0.3+924f046a77.jar",
+            "D:/document/dev/gradle/.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-rendering-data-attachment-v1/0.3.39+92a0d36777/6d8e946691b66a01c4a826e0c4f6ccb0fc0d22ba/fabric-rendering-data-attachment-v1-0.3.39+92a0d36777.jar"
+    )
 
-    // Oculus (Iris for Forge) - runtime compatibility
-    modImplementation "maven.modrinth:oculus:${oculus_version}"
+    // Iris for NeoForge 1.21.1
+    implementation "maven.modrinth:iris:${iris_version}"
 
     // JNA - RenderDoc support
     implementation "net.java.dev.jna:jna:${jna_version}"
@@ -189,18 +207,8 @@ dependencies {
     // JetBrains annotations
     implementation "org.jetbrains:annotations:24.0.1"
 
-    //Starlight
-    modImplementation "maven.modrinth:starlight-forge:cNa0vkNj"
 }
 
-// Mixin refmap
-mixin {
-    add sourceSets.main, "${mod_id}.refmap.json"
-    config "${mod_id}.mixins.json"
-}
-
-// 将生成的 refmap 添加到资源输出
-sourceSets.main.output.dir("build/generated/sources/mixin/main", builtBy: tasks.compileJava)
 
 jar {
     manifest.attributes([
@@ -216,8 +224,8 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
     var replaceProperties = [
             minecraft_version        : minecraft_version,
             minecraft_version_range  : minecraft_version_range,
-            forge_version            : forge_version,
-            forge_version_range      : forge_version_range,
+            neoforge_version         : neoforge_version,
+            neoforge_version_range   : neoforge_version_range,
             loader_version_range     : loader_version_range,
             mod_id                   : mod_id,
             mod_name                 : mod_name,
@@ -235,7 +243,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 // this works with both building through Gradle and the IDE.
 sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
-legacyForge.ideSyncTask generateModMetadata
+neoForge.ideSyncTask generateModMetadata
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
@@ -251,11 +259,71 @@ publishing {
     }
 }
 
+tasks.register("validateGlslCompatibility") {
+    def includeDir = file("src/main/resources/assets/minecraft/shaders/include")
+    inputs.dir(includeDir)
+    doLast {
+        if (!includeDir.exists()) return
+        def forbidden = [
+                [name: "nested version directive", pattern: /(?m)^\s*#version\s+/],
+                [name: "C-style float suffix", pattern: /\b\d+\.\d+f\b/],
+                [name: "leading decimal literal", pattern: /(?<![0-9A-Za-z_.])\.[0-9]+/],
+                [name: "legacy texture2D", pattern: /\btexture2D\s*\(/],
+                [name: "legacy fragment output", pattern: /\bgl_FragColor\b/],
+                [name: "legacy vertex qualifier", pattern: /\b(attribute|varying)\b/]
+        ]
+        fileTree(includeDir).matching { include "**/*.glsl" }.each { source ->
+            def text = source.getText("UTF-8")
+            forbidden.each { rule ->
+                if (text.find(rule.pattern)) {
+                    throw new GradleException("GLSL compatibility check failed in ${source}: ${rule.name}")
+                }
+            }
+            def conditionalCount = text.findAll(/(?m)^\s*#if(?:n?def)?\b/).size()
+            if (conditionalCount != text.findAll(/(?m)^\s*#endif\b/).size()) {
+                throw new GradleException("GLSL compatibility check failed in ${source}: unbalanced preprocessor conditionals")
+            }
+            if (text.count("{") != text.count("}")) {
+                throw new GradleException("GLSL compatibility check failed in ${source}: unbalanced braces")
+            }
+        }
+
+        def generatedShaderSources = [
+                file("src/main/java/com/y271727uy/lumenized/client/light/LightManager.java"),
+                file("src/main/java/com/y271727uy/lumenized/client/postprocessing/PostProcessing.java"),
+                file("src/main/java/com/y271727uy/lumenized/comp/iris/ShaderpackInjections.java")
+        ]
+        generatedShaderSources.each { source ->
+            if (!source.exists()) return
+            def text = source.getText("UTF-8")
+            [
+                    [name: "legacy texture2D", pattern: /\btexture2D\s*\(/],
+                    [name: "legacy fragment output", pattern: /\bgl_FragColor\b/],
+                    [name: "legacy vertex qualifier", pattern: /\b(attribute|varying)\b/],
+                    [name: "C-style float suffix", pattern: /\b\d+\.\d+f\b/],
+                    [name: "leading decimal literal", pattern: /(?<![0-9A-Za-z_.])\.[0-9]+/]
+            ].each { rule ->
+                if (text.find(rule.pattern)) {
+                    throw new GradleException("Generated GLSL compatibility check failed in ${source}: ${rule.name}")
+                }
+            }
+        }
+    }
+}
+
+tasks.named("processResources").configure {
+    dependsOn tasks.named("validateGlslCompatibility")
+}
+
 tasks.withType(JavaCompile).configureEach {
+    dependsOn tasks.named("extractSodiumMod")
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
     options.compilerArgs.addAll([
         '-AdisableTargetValidator=true'
     ])
+}
+tasks.matching { it.name == "runClient" || it.name == "runServer" }.configureEach {
+    dependsOn tasks.named("extractSodiumMod")
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

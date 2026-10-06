@@ -15,7 +15,7 @@ interface FluidChecker extends Check {
 	default Pair<ResourceLocation, Fluid> fluid() {
 		var fluidName = getFluidName();
 		Objects.requireNonNull(fluidName);
-		if (!ResourceLocation.isValidResourceLocation(fluidName)) {
+		if (ResourceLocation.tryParse(fluidName) == null) {
 			LumenizedConstants.LOGGER.error("invalid fluid name " + fluidName + " form" + getConfigSource());
 			return null;
 		}

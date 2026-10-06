@@ -99,7 +99,7 @@ public enum LightManager {
         if (lightShader == null) {
             try {
                 lightShader = FileUtility.readInputStream(LightManager.class.getResourceAsStream("/assets/minecraft/shaders/include/shimmer.glsl"));
-                lightShader = lightShader.replace("#version 150", "");
+                lightShader = lightShader.replaceFirst("(?m)^\\s*#version\\s+\\d+[^\\r\\n]*", "");
             } catch (IOException e) {
                 LumenizedConstants.LOGGER.error("error while loading lumenized lighting shader");
                 lightShader = "";
@@ -112,55 +112,70 @@ public enum LightManager {
     }
 
     public static String RbVVSHInjection(String s) {
+        if (s.contains("isBloom") || !s.matches("(?s).*#version\\s+\\d+.*")
+                || s.lastIndexOf("out vec2 v_TexCoord;") < 0
+                || s.lastIndexOf("void main()") < 0 || s.lastIndexOf("_vert_light;") < 0
+                || s.lastIndexOf("_vert_material;") < 0
+                || s.lastIndexOf("v_ColorModulator;") < 0) {
+            return s;
+        }
         s = new StringBuffer(s).insert(s.lastIndexOf("out vec2 v_TexCoord;"), """
-                 out float isBloom;
+                 flat out float isBloom;
                  """).toString();
         s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), getLightShader()).toString();
         s = new StringBuffer(s).insert(s.lastIndexOf('}'), Services.PLATFORM.useLightMap() ? """
                     v_ColorModulator = color_light_uv(position, vec4(v_ColorModulator, 1.0), ivec2(_vert_light) * 16 ).rgb;
                 """ : """
-                    v_ColorModulator = color_light(position, vec4(v_ColorModulator,1.0)  * 16).rgb;
+                    v_ColorModulator = color_light(position, vec4(v_ColorModulator,1.0) * 16.0).rgb;
                 """).toString();
         s = new StringBuffer(s).insert(s.lastIndexOf("}"), """
-                isBloom = ((_vert_material >> 4u) & 0x01u) > 0u ? 256.0 : 0.0;
+                isBloom = ((uint(_vert_material) >> 4u) & 0x01u) > 0u ? 256.0 : 0.0;
                 """).toString();
         return s;
     }
 
-    public static String embeddiumVVSHInjection(String s) {
-        // Verify injection points exist in Embeddium 0.3.31+ shader format
-        if (s.lastIndexOf("out vec2 v_TexCoord;") < 0 || s.lastIndexOf("void main()") < 0) {
-            String err = "Embeddium VSH format incompatible: expected 'out vec2 v_TexCoord;', 'void main()' not found";
-            LumenizedConstants.LOGGER.error(err);
-            throw new RuntimeException(err);
+    public static String sodiumVVSHInjection(String s) {
+        return sodiumVVSHInjection(s, true);
+    }
+
+    public static String sodiumVVSHInjection(String s, boolean includeBloomOutput) {
+        if (!s.matches("(?s).*#version\\s+\\d+.*")
+                || s.lastIndexOf("out vec2 v_TexCoord;") < 0
+                || s.lastIndexOf("void main()") < 0
+                || s.lastIndexOf("_vert_tex_light_coord;") < 0
+                || s.lastIndexOf("position;") < 0
+                || s.lastIndexOf("v_Color;") < 0) {
+            LumenizedConstants.LOGGER.warn("Skipping Sodium VSH injection: unsupported shader layout");
+            return s;
         }
 
+        boolean bloomOutput = includeBloomOutput && s.lastIndexOf("_material_params") >= 0;
         try {
-            // Insert isBloom output before texCoord declaration (recalculate indices after each edit)
-            s = new StringBuffer(s).insert(s.lastIndexOf("out vec2 v_TexCoord;"), """
-                     out float isBloom;
-                     """).toString();
+            if (bloomOutput) {
+                s = new StringBuffer(s).insert(s.lastIndexOf("out vec2 v_TexCoord;"), """
+                         flat out float isBloom;
+                         """).toString();
+            }
             s = new StringBuffer(s).insert(s.lastIndexOf("void main()"), getLightShader()).toString();
-            // Embeddium's `_vert_tex_light_coord` is already an ivec2 on the vanilla 0..255 lightmap scale - see
-            // `_sample_lightmap` dividing it by 256. Sodium's `_vert_light` was 0..15, which is where the `* 16`
-            // came from; carrying it over pushes uv.x past the `uv.x < 255` guard in color_light_uv, so every
-            // chunk light silently took the "no uv light" branch and terrain never got tinted.
+            // Sodium's `_vert_tex_light_coord` uses the vanilla 0..255 lightmap scale.
             s = new StringBuffer(s).insert(s.lastIndexOf('}'), Services.PLATFORM.useLightMap() ? """
-                        v_Color = color_light_uv(position, v_Color, _vert_tex_light_coord).rgba;
+                        v_Color = color_light_uv(position, v_Color, ivec2(_vert_tex_light_coord * 256.0)).rgba;
                     """ : """
                         v_Color = color_light(position, v_Color).rgba;
                     """).toString();
-            s = new StringBuffer(s).insert(s.lastIndexOf('}'), """
-                    isBloom = ((_material_params >> 4u) & 0x01u) > 0u ? 256.0 : 0.0;
-                    """).toString();
+            if (bloomOutput) {
+                s = new StringBuffer(s).insert(s.lastIndexOf('}'), """
+                        isBloom = ((uint(_material_params) >> 4u) & 0x01u) > 0u ? 256.0 : 0.0;
+                        """).toString();
+            }
             return s;
         } catch (Exception e) {
-            LumenizedConstants.LOGGER.error("Failed to inject colored light into Embeddium VSH: {}", e.getMessage());
+            LumenizedConstants.LOGGER.error("Failed to inject colored light into Sodium VSH: {}", e.getMessage());
             throw e;
         }
     }
 
-    public void bindRbProgram(int programID) {
+    public void bindSodiumProgram(int programID) {
         lightUBO.bindToShader(programID, "Lights");
         envUBO.bindToShader(programID, "Env");
     }
@@ -217,7 +232,7 @@ public enum LightManager {
     }
 
     public void renderLevelPre(int blockLightSize, float camX, float camY, float camZ) {
-        // Ensure UBOs are initialized before first use (reloadShaders may not have been called yet when Oculus is loaded)
+        // Ensure UBOs are initialized before first use (reloadShaders may not have been called yet when Iris is loaded)
         if (lightUBO == null || envUBO == null) {
             reloadShaders();
             if (lightUBO == null || envUBO == null) {
@@ -272,7 +287,7 @@ public enum LightManager {
         Vec3 localPlayerPosition = localPlayer.position();
         if (Minecraft.getInstance().level == null) return;
         List<AbstractClientPlayer> players = Minecraft.getInstance().level.players();
-        float partialTicks = Minecraft.getInstance().getFrameTime();
+        float partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         for (AbstractClientPlayer player : players) {
             Vec3 position = player.getPosition(partialTicks);
             if (player == localPlayer || position.distanceToSqr(localPlayerPosition) < 32 * 32){
@@ -524,11 +539,11 @@ public enum LightManager {
 			for (var  itemLight : config.itemLights){
 				var template = new ColorPointLight.Template(itemLight.radius, itemLight.color());
 				if (itemLight.itemName != null){
-					if (!ResourceLocation.isValidResourceLocation(itemLight.itemName)){
+					if (ResourceLocation.tryParse(itemLight.itemName) == null){
 						LumenizedConstants.LOGGER.error("invalid item name " + itemLight.itemName + " form" + config.configSource);
 						continue;
 					}
-					var itemLocation = new ResourceLocation(itemLight.itemName);
+					var itemLocation = ResourceLocation.parse(itemLight.itemName);
 					if (!BuiltInRegistries.ITEM.containsKey(itemLocation)){
 						LumenizedConstants.LOGGER.error("can't find item " + itemLocation + " from" + config.configSource);
 						continue;
@@ -536,11 +551,11 @@ public enum LightManager {
 					var item = BuiltInRegistries.ITEM.get(itemLocation);
 					registerItemLight(item, itemStack -> template);
 				}else {
-					if (!ResourceLocation.isValidResourceLocation(itemLight.itemTag)){
+					if (ResourceLocation.tryParse(itemLight.itemTag) == null){
 						LumenizedConstants.LOGGER.error("invalid item tag name " + itemLight.itemTag + " form" + config.configSource);
 						continue;
 					}
-					registerTagLight(new ResourceLocation(itemLight.itemTag),itemStack -> template);
+					registerTagLight(ResourceLocation.parse(itemLight.itemTag),itemStack -> template);
 				}
 			}
 		}

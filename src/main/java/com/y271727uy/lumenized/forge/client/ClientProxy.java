@@ -22,11 +22,14 @@ import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.server.packs.resources.ResourceProvider;
 
 import java.util.Objects;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.event.RegisterShadersEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.api.distmarker.Dist;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -34,19 +37,26 @@ import org.jetbrains.annotations.NotNull;
  * @date: 2022/05/02
  * @implNote com.y271727uy.lumenized.client.ClientProxy
  */
+@EventBusSubscriber(modid = LumenizedConstants.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientProxy extends CommonProxy implements ResourceManagerReloadListener {
+    private static ClientProxy INSTANCE;
 
     public ClientProxy() {
+        INSTANCE = this;
         LightManager.injectShaders();
         PostProcessing.injectShaders();
         ShaderpackInjections.injectShaders();
     }
 
     @SubscribeEvent
-    public void shaderRegistry(RegisterShadersEvent event) {
+    public static void shaderRegistry(RegisterShadersEvent event) {
+        LumenizedConstants.LOGGER.info("Registering Lumenized shader instances");
         ResourceProvider resourceProvider = event.getResourceProvider();
         try {
-            event.registerShader(ReloadShaderManager.backupNewShaderInstance(resourceProvider, ResourceLocation.tryParse(LumenizedConstants.MOD_ID + ":" + "fast_blit"), DefaultVertexFormat.POSITION), shaderInstance -> RenderUtils.blitShader = shaderInstance);
+            event.registerShader(ReloadShaderManager.backupNewShaderInstance(resourceProvider, ResourceLocation.tryParse(LumenizedConstants.MOD_ID + ":" + "fast_blit"), DefaultVertexFormat.POSITION), shaderInstance -> {
+                RenderUtils.blitShader = shaderInstance;
+                LumenizedConstants.LOGGER.info("Lumenized fast_blit shader loaded");
+            });
             event.registerShader(ReloadShaderManager.backupNewShaderInstance(resourceProvider, Objects.requireNonNull(ResourceLocation.tryParse(LumenizedConstants.MOD_ID + ":" + "rendertype_armor_cutout_no_cull")), DefaultVertexFormat.NEW_ENTITY),
                     shaderInstance -> LumenizedRenderTypes.EmissiveArmorRenderType.emissiveArmorGlintShader = shaderInstance);
             event.registerShader(ReloadShaderManager.backupNewShaderInstance(resourceProvider,Objects.requireNonNull(ResourceLocation.tryParse(LumenizedConstants.MOD_ID + ":" + "hsb_block")), HsbColorWidget.HSB_VERTEX_FORMAT), shaderInstance -> HsbColorWidget.hsbShader = shaderInstance);
@@ -59,8 +69,8 @@ public class ClientProxy extends CommonProxy implements ResourceManagerReloadLis
     }
 
     @SubscribeEvent
-    public void registerReloadableResourceManager(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener(this);
+    public static void registerReloadableResourceManager(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener(INSTANCE);
     }
 
     @Override
@@ -77,16 +87,16 @@ public class ClientProxy extends CommonProxy implements ResourceManagerReloadLis
     }
 
     @SubscribeEvent
-    public void registerKeyBinding(RegisterKeyMappingsEvent event) {
+    public static void registerKeyBinding(RegisterKeyMappingsEvent event) {
         event.register(ShimmerFields.recordScreenColor);
     }
 
     @SubscribeEvent
-    public void registerOverlay(RegisterGuiOverlaysEvent event) {
-        event.registerBelowAll("screen_color_pick_overly", (forgeGui, guiGraphics, partialTick, screenWidth, screenHeight) -> {
+    public static void registerOverlay(RegisterGuiLayersEvent event) {
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "screen_color_pick_overlay"), (guiGraphics, deltaTracker) -> {
             Eyedropper.update(guiGraphics);
         });
-        event.registerBelowAll("screen_shimmer_light_counter",(forgeGui, guiGraphics, partialTick, screenWidth, screenHeight) -> {
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "screen_shimmer_light_counter"),(guiGraphics, deltaTracker) -> {
             LightCounter.Render.update(guiGraphics);
         });
     }

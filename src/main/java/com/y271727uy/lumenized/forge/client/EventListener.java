@@ -17,13 +17,12 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RegisterClientCommandsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import static net.minecraft.commands.Commands.literal;
 
@@ -32,13 +31,12 @@ import static net.minecraft.commands.Commands.literal;
  * @date 2022/5/12
  * @implNote EventListener
  */
-@Mod.EventBusSubscriber(modid = LumenizedConstants.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 @OnlyIn(Dist.CLIENT)
 public class EventListener {
 
     @SubscribeEvent
-    public static void onClientTickPost(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
+    public static void onClientTickPost(ClientTickEvent.Post event) {
+        {
             ItemEntityLightSourceManager.onAllItemEntityTickEnd();
         }
     }

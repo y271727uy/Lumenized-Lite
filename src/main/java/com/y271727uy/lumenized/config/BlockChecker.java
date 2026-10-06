@@ -14,7 +14,7 @@ interface BlockChecker extends Check {
 	default Pair<ResourceLocation, Block> block() {
 		var blockName = getBlockName();
 		Objects.requireNonNull(blockName);
-		if (!ResourceLocation.isValidResourceLocation(blockName)) {
+		if (ResourceLocation.tryParse(blockName) == null) {
 			LumenizedConstants.LOGGER.error("invalid block name " + blockName + " form" + getConfigSource());
 			return null;
 		}

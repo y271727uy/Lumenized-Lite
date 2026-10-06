@@ -31,10 +31,10 @@ public abstract class MainTargetMixin extends RenderTarget implements IMainTarge
     public void clearBloomTexture(boolean pClearError) {
         if (colorBloomTextureId > -1) {
             this.bindWrite(true);
-            GL20.glDrawBuffers(Services.PLATFORM.getBloomColorAttachmentNumber());
+            GL20.glDrawBuffers(new int[]{Services.PLATFORM.getBloomColorAttachmentNumber()});
             GlStateManager._clearColor(0, 0, 0, 0);
             GlStateManager._clear(GL11.GL_COLOR_BUFFER_BIT, pClearError);
-            GL20.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT0);
+            GL20.glDrawBuffers(new int[]{GL30.GL_COLOR_ATTACHMENT0});
             this.unbindWrite();
         }
     }

@@ -15,7 +15,7 @@ public class Services {
     private static IPlatformHelper load() {
         String loaderName = ClientBrandRetriever.getClientModName().toLowerCase().trim();
         var classLocation = switch (loaderName) {
-            case "forge" -> "com.y271727uy.lumenized.forge.platform.ForgePlatformHelper";
+            case "forge", "neoforge" -> "com.y271727uy.lumenized.forge.platform.ForgePlatformHelper";
             case "fabric" -> "com.y271727uy.lumenized.fabric.platform.FabricPlatformHelper";
             case "quilt" -> {
                 LumenizedConstants.LOGGER.warn("quilt detected, just work under fabric");

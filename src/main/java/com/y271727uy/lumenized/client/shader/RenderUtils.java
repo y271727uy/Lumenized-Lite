@@ -29,6 +29,10 @@ public class RenderUtils {
 
     public static void fastBlit(RenderTarget from, RenderTarget to) {
         RenderSystem.assertOnRenderThread();
+        if (blitShader == null) {
+            LumenizedConstants.LOGGER.warn("Skipping fast blit because the Lumenized shader has not loaded yet");
+            return;
+        }
         GlStateManager._colorMask(true, true, true, true);
         GlStateManager._disableDepthTest();
         GlStateManager._depthMask(false);
@@ -49,13 +53,12 @@ public class RenderUtils {
         RenderSystem.defaultBlendFunc();
 
         Tesselator tesselator = RenderSystem.renderThreadTesselator();
-        BufferBuilder bufferbuilder = tesselator.getBuilder();
-        bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        bufferbuilder.vertex(-1, 1, 0).endVertex();
-        bufferbuilder.vertex(-1, -1, 0).endVertex();
-        bufferbuilder.vertex(1, -1, 0).endVertex();
-        bufferbuilder.vertex(1, 1, 0).endVertex();
-        BufferUploader.draw(bufferbuilder.end());
+        BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        bufferbuilder.addVertex(-1, 1, 0);
+        bufferbuilder.addVertex(-1, -1, 0);
+        bufferbuilder.addVertex(1, -1, 0);
+        bufferbuilder.addVertex(1, 1, 0);
+        BufferUploader.draw(bufferbuilder.buildOrThrow());
         blitShader.clear();
 
         GlStateManager._depthMask(true);
@@ -69,7 +72,7 @@ public class RenderUtils {
 
     public static Pair<ShaderInstance, Consumer<ShaderInstance>> registerShaders(ResourceManager resourceManager) {
         try {
-            return Pair.of(ReloadShaderManager.backupNewShaderInstance(resourceManager, new ResourceLocation(LumenizedConstants.MOD_ID, "fast_blit").toString(), DefaultVertexFormat.POSITION), shaderInstance -> {
+            return Pair.of(ReloadShaderManager.backupNewShaderInstance(resourceManager, ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "fast_blit").toString(), DefaultVertexFormat.POSITION), shaderInstance -> {
                 blitShader = shaderInstance;
             });
         } catch (IOException e) {

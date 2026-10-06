@@ -16,12 +16,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(RenderTarget.class)
 public abstract class RenderTargetMixin {
 
+    @org.spongepowered.asm.mixin.Shadow
+    private void setFilterMode(int filterMode, boolean force) {
+        throw new UnsupportedOperationException();
+    }
+
     @Redirect(method = "createBuffers",
             at = @At(
                     value = "INVOKE",
-                    target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;setFilterMode(I)V"))
-    private void injectCreateBuffers(RenderTarget instance, int pFilterMode) {
-        instance.setFilterMode(instance.filterMode == 0 ? pFilterMode : instance.filterMode);
+                    target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;setFilterMode(IZ)V"))
+    private void injectCreateBuffers(RenderTarget instance, int pFilterMode, boolean force) {
+        ((RenderTargetMixin) (Object) instance).setFilterMode(
+                instance.filterMode == 0 ? pFilterMode : instance.filterMode, force);
     }
 
     @Inject(method = "destroyBuffers", at = @At("TAIL"))

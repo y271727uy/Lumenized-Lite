@@ -67,14 +67,12 @@ public enum Eyedropper {
 				RenderSystem.defaultBlendFunc();
 
 				Tesselator tesselator = RenderSystem.renderThreadTesselator();
-				BufferBuilder bufferbuilder = tesselator.getBuilder();
-
-				bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-				bufferbuilder.vertex(-1, 1, 0).endVertex();
-				bufferbuilder.vertex(-1, -1, 0).endVertex();
-				bufferbuilder.vertex(1, -1, 0).endVertex();
-				bufferbuilder.vertex(1, 1, 0).endVertex();
-				BufferUploader.draw(bufferbuilder.end());
+				BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+				bufferbuilder.addVertex(-1, 1, 0);
+				bufferbuilder.addVertex(-1, -1, 0);
+				bufferbuilder.addVertex(1, -1, 0);
+				bufferbuilder.addVertex(1, 1, 0);
+				BufferUploader.draw(bufferbuilder.buildOrThrow());
 				colorPickShader.clear();
 
 				GlStateManager._depthMask(true);
@@ -298,7 +296,7 @@ public enum Eyedropper {
 	 */
 	public static Pair<ShaderInstance, Consumer<ShaderInstance>> registerShaders(ResourceManager resourceManager) {
 		try {
-			return Pair.of(new ShaderInstance(resourceManager, new ResourceLocation(LumenizedConstants.MOD_ID, "pick_color").toString(), DefaultVertexFormat.POSITION),
+			return Pair.of(new ShaderInstance(resourceManager, ResourceLocation.fromNamespaceAndPath(LumenizedConstants.MOD_ID, "pick_color").toString(), DefaultVertexFormat.POSITION),
 					Eyedropper.mode::setShader);
 		} catch (IOException e) {
 			throw new RuntimeException(e);

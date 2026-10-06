@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="lumenized"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+logoFile="logo.png"
+description='''${mod_description}'''
+
+[[dependencies.lumenized]]
+    modId="neoforge"
+    mandatory=true
+    versionRange="${neoforge_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[mixins]]
+    config="${mod_id}.mixins.json"
+
+[[dependencies.lumenized]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"

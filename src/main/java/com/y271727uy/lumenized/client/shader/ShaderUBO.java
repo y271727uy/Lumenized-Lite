@@ -73,7 +73,13 @@ public class ShaderUBO {
 
     public void bindToShader(int program, String bufBlockName) {
         if (blockBinding > -1) {
-            GL31.glUniformBlockBinding(program, GL31.glGetUniformBlockIndex(program, bufBlockName), blockBinding);
+            int blockIndex = GL31.glGetUniformBlockIndex(program, bufBlockName);
+            // Sodium/Iris programs do not necessarily declare Lumenized's UBOs.
+            // Binding GL_INVALID_INDEX is rejected by drivers and pollutes the
+            // debug stream with GL_INVALID_OPERATION/GL_INVALID_VALUE errors.
+            if (blockIndex != GL31.GL_INVALID_INDEX) {
+                GL31.glUniformBlockBinding(program, blockIndex, blockBinding);
+            }
         }
     }
 
