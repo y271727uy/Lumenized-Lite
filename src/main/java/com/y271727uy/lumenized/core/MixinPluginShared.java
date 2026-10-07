@@ -17,7 +17,6 @@ public interface MixinPluginShared {
 			return false;
 		}
 	}
-
 	private static boolean checkOptifine() {
 		try {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();

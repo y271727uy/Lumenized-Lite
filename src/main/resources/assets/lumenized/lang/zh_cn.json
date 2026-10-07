@@ -1,3 +1,22 @@
 {
-	"shimmer.key.pickColor": "拾色"
+	"shimmer.key.pickColor": "拾色",
+	"lumenized.screen.config.title": "Lumenized 设置",
+	"lumenized.config.enable_post_processing": "启用后处理",
+	"lumenized.config.enable_post_processing.tooltip": "启用或关闭所有 Lumenized 后处理效果。",
+	"lumenized.config.enable_colored_light": "启用彩色光",
+	"lumenized.config.enable_colored_light.tooltip": "启用彩色动态光。",
+	"lumenized.config.enable_bloom": "启用泛光",
+	"lumenized.config.enable_bloom.tooltip": "启用 Bloom 后处理。",
+	"lumenized.config.block_bloom": "方块泛光",
+	"lumenized.config.block_bloom.tooltip": "启用已配置方块的 Bloom。",
+	"lumenized.config.light_map": "使用光照贴图",
+	"lumenized.config.light_map.tooltip": "使用光照贴图分析计算动态光。",
+	"lumenized.config.additive_blend": "加法光照混合",
+	"lumenized.config.additive_blend.tooltip": "使用更鲜艳的加法混合渲染彩色光。",
+	"lumenized.config.builtin_setting": "启用内置配置",
+	"lumenized.config.builtin_setting.tooltip": "加载 Lumenized 内置的 lumenized.json 配置。",
+	"lumenized.config.bloom_color_attachment": "Bloom 颜色附件",
+	"lumenized.config.bloom_color_attachment.tooltip": "选择用于存储 Bloom 数据的颜色附件。",
+	"lumenized.config.inset_shader": "插入 Shader 信息",
+	"lumenized.config.inset_shader.tooltip": "将 Shader 名称插入 Shader 源码；非开发环境不可用。"
 }

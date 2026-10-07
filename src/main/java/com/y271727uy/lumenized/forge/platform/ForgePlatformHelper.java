@@ -126,6 +126,10 @@ public class ForgePlatformHelper implements IPlatformHelper {
 	}
 
 	@Override
+	public boolean isPostProcessingEnable() {
+		return LumenizedForgeConfig.getEnablePostProcessing().get();
+	}
+	@Override
 	public LumenizedLoadConfigEvent postLoadConfigurationEvent(LumenizedLoadConfigEvent event) {
 		ModLoader.get().postEvent(new com.y271727uy.lumenized.forge.event.LumenizedLoadConfigEvent(event));
 		return event;
@@ -139,14 +143,17 @@ public class ForgePlatformHelper implements IPlatformHelper {
 
     @Override
     public int getBloomColorAttachmentNumber() {
-        //TODO config hasn't load when we need it, need change
-        return 1 + GL30.GL_COLOR_ATTACHMENT0;
+        if (!LumenizedForgeConfig.isLoaded()) {
+            return GL30.GL_COLOR_ATTACHMENT0 + 1;
+        }
+        int configured = LumenizedForgeConfig.getBloomColorAttachmentNumber().get();
+        int maximum = Math.max(1, GL30.glGetInteger(GL30.GL_MAX_COLOR_ATTACHMENTS) - 1);
+        return GL30.GL_COLOR_ATTACHMENT0 + Mth.clamp(configured, 1, Math.min(16, maximum));
     }
 
     @Override
     public boolean isEnableInsetShaderInfo() {
-        //TODO config hasn't load when we need it, need change
-        return isDevelopmentEnvironment();
+        return LumenizedForgeConfig.isLoaded() && LumenizedForgeConfig.getInsertShaderInfo().get();
     }
 
 	@Override

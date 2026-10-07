@@ -6,6 +6,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 
 public class LumenizedForgeConfig {
+    private static ForgeConfigSpec CLIENT_SPEC;
     private static ForgeConfigSpec.IntValue UBO_OFFSET;
     private static ForgeConfigSpec.BooleanValue BLOCK_BLOOM;
     private static ForgeConfigSpec.BooleanValue LIGHT_MAP;
@@ -14,6 +15,7 @@ public class LumenizedForgeConfig {
     private static ForgeConfigSpec.BooleanValue ADDITIVE_BLEND;
     private static ForgeConfigSpec.IntValue BLOOM_COLOR_ATTACHMENT_NUMBER;
     private static ForgeConfigSpec.BooleanValue INSERT_SHADER_INFO;
+    private static ForgeConfigSpec.BooleanValue ENABLE_POST_PROCESSING;
     private static ForgeConfigSpec.BooleanValue ENABLE_BUILDIN_SETTING;
 
     public static ForgeConfigSpec.IntValue getUboOffset() {
@@ -82,6 +84,14 @@ public class LumenizedForgeConfig {
         return INSERT_SHADER_INFO;
     }
 
+    public static ForgeConfigSpec.BooleanValue getEnablePostProcessing(){
+        if (ENABLE_POST_PROCESSING == null) {
+            logAccessUnInit("ENABLE_POST_PROCESSING");
+            registerConfig();
+        }
+        return ENABLE_POST_PROCESSING;
+    }
+
     public static ForgeConfigSpec.BooleanValue getEnableBuildinSetting(){
         if (ENABLE_BUILDIN_SETTING == null) {
             logAccessUnInit("ENABLE_BUILDIN_SETTING");
@@ -99,11 +109,16 @@ public class LumenizedForgeConfig {
         }
     }
 
+    public static boolean isLoaded() {
+        return CLIENT_SPEC != null && CLIENT_SPEC.isLoaded();
+    }
+
     @SuppressWarnings("removal")
     public static void registerConfig(){
         ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
         registerClientConfig(clientBuilder);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT,clientBuilder.build());
+        CLIENT_SPEC = clientBuilder.build();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
     }
 
     private static void registerClientConfig(ForgeConfigSpec.Builder builder){
@@ -139,6 +154,11 @@ public class LumenizedForgeConfig {
                 whether inset shader name into shader source file or not
                 """
         ).define("inset shader", false);
+        ENABLE_POST_PROCESSING = builder.comment(
+        """
+                whether enable all lumenized post-processing effects
+                """
+        ).define("enable post processing", true);
         ENABLE_BUILDIN_SETTING = builder.comment(
         """
                 whether enable buildin lumenized.json

@@ -84,6 +84,8 @@ public interface IPlatformHelper {
 
     boolean isAdditiveBlend();
 
+    boolean isPostProcessingEnable();
+
     LumenizedLoadConfigEvent postLoadConfigurationEvent(LumenizedLoadConfigEvent event);
 
 	LumenizedReloadEvent postReloadEvent(LumenizedReloadEvent event);

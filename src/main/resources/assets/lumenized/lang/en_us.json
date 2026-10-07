@@ -1,3 +1,22 @@
 {
-	"shimmer.key.pickColor": "Pick Color"
+	"shimmer.key.pickColor": "Pick Color",
+	"lumenized.screen.config.title": "Lumenized Settings",
+	"lumenized.config.enable_post_processing": "Enable Post Processing",
+	"lumenized.config.enable_post_processing.tooltip": "Enable or disable all Lumenized post-processing effects.",
+	"lumenized.config.enable_colored_light": "Enable Colored Light",
+	"lumenized.config.enable_colored_light.tooltip": "Enable colored dynamic lights.",
+	"lumenized.config.enable_bloom": "Enable Bloom",
+	"lumenized.config.enable_bloom.tooltip": "Enable Bloom post-processing.",
+	"lumenized.config.block_bloom": "Block Bloom",
+	"lumenized.config.block_bloom.tooltip": "Enable Bloom for configured blocks.",
+	"lumenized.config.light_map": "Use Light Map",
+	"lumenized.config.light_map.tooltip": "Use light-map analysis for dynamic lighting.",
+	"lumenized.config.additive_blend": "Additive Light Blending",
+	"lumenized.config.additive_blend.tooltip": "Use vivid additive blending for colored lights.",
+	"lumenized.config.builtin_setting": "Enable Built-in Settings",
+	"lumenized.config.builtin_setting.tooltip": "Load Lumenized's built-in lumenized.json configuration.",
+	"lumenized.config.bloom_color_attachment": "Bloom Color Attachment",
+	"lumenized.config.bloom_color_attachment.tooltip": "Select the color attachment used to store Bloom data.",
+	"lumenized.config.inset_shader": "Insert Shader Information",
+	"lumenized.config.inset_shader.tooltip": "Insert shader names into shader source; unavailable outside development environments."
 }

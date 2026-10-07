@@ -40,6 +40,21 @@ public class ClientProxy extends CommonProxy implements ResourceManagerReloadLis
         LightManager.injectShaders();
         PostProcessing.injectShaders();
         ShaderpackInjections.injectShaders();
+        registerOptionalEmbeddiumConfig();
+    }
+
+    private static void registerOptionalEmbeddiumConfig() {
+        try {
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            if (loader.getResource("org/embeddedt/embeddium/api/OptionGUIConstructionEvent.class") == null) return;
+            Class<?> integration = Class.forName("com.y271727uy.lumenized.comp.embeddium.EmbeddiumIntegration", true, loader);
+            integration.getMethod("register").invoke(null);
+            LumenizedConstants.LOGGER.info("Embeddium configuration page registered");
+        } catch (ClassNotFoundException ignored) {
+            // Embeddium is optional; no visual configuration is exposed without it.
+        } catch (ReflectiveOperationException e) {
+            LumenizedConstants.LOGGER.error("Failed to register optional Embeddium configuration page", e);
+        }
     }
 
     @SubscribeEvent

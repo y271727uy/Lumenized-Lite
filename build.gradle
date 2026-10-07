@@ -206,7 +206,6 @@ jar {
     manifest.attributes([
             "MixinConfigs": "${mod_id}.mixins.json"
     ])
-    // 排除 Fabric API 桩接口，不打包进 JAR
     exclude 'net/fabricmc/**'
 }
 

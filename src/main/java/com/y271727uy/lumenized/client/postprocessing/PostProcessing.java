@@ -361,6 +361,7 @@ public class PostProcessing implements ResourceManagerReloadListener {
     }
 
     public boolean allowPost() {
+        if (!Services.PLATFORM.isPostProcessingEnable()) return false;
         return !(this == PostProcessing.BLOOM_UNREAL || this == PostProcessing.BLOOM_UNITY) || Services.PLATFORM.isBloomEnable();
     }
 
