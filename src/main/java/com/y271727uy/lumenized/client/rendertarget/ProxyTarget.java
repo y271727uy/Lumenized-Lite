@@ -40,7 +40,9 @@ public class ProxyTarget extends RenderTarget {
 
     @Override
     public void destroyBuffers() {
-        parent.destroyBuffers();
+        // The proxy does not own these buffers. PostChain.close() destroys every custom target it holds,
+        // and the parent here is usually the main render target: forwarding the call tears down the
+        // game's framebuffer on every resource reload, and nothing recreates it until the window resizes.
     }
 
     @Override
